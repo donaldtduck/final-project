@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bc94e000-fba8-4d34-9ecf-a4e3dbfd3626" name="Changes" comment="Create docs and UserStories.md">
-      <change beforePath="$PROJECT_DIR$/docs/User Stories.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/User Stories.md" afterDir="false" />
-    </list>
+    <list default="true" id="bc94e000-fba8-4d34-9ecf-a4e3dbfd3626" name="Changes" comment="Update UserStories.md, add 3 new Could-Have-User-Stories." />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -90,7 +88,23 @@
       <option name="project" value="LOCAL" />
       <updated>1774850951437</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="Update UserStories.md, breakdown USs into Tasks">
+      <option name="closed" value="true" />
+      <created>1774851905395</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1774851905395</updated>
+    </task>
+    <task id="LOCAL-00005" summary="Update UserStories.md, add 3 new Could-Have-User-Stories.">
+      <option name="closed" value="true" />
+      <created>1774853743428</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1774853743428</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -108,6 +122,8 @@
     <MESSAGE value="initial commit." />
     <MESSAGE value="react initialization." />
     <MESSAGE value="Create docs and UserStories.md" />
-    <option name="LAST_COMMIT_MESSAGE" value="Create docs and UserStories.md" />
+    <MESSAGE value="Update UserStories.md, breakdown USs into Tasks" />
+    <MESSAGE value="Update UserStories.md, add 3 new Could-Have-User-Stories." />
+    <option name="LAST_COMMIT_MESSAGE" value="Update UserStories.md, add 3 new Could-Have-User-Stories." />
   </component>
 </project>
