@@ -1,9 +1,18 @@
 ## Database ER Diagram
-
-- Purchased-stock
+- asset
   - symbol
-  - Name
-  - purchased price
-  - purchased date
-  - category
+  - name
+  - type
+  - avg-price(db transaction to protect data integrity)
+- transaction-record
+  - id
+  - symbol
+  - quantity(+/-)
+  - price
+  - date
+- stocks
+  - symbol
+- user-state
+  - username
+  - balance
 
