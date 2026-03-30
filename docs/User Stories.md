@@ -2,7 +2,7 @@
 
 
 
-## 1. Basic Portfolio Browsing
+## 1. Basic Portfolio Browsing - Must have
 
 **As a** portfolio user, **I want** to view all items in my financial portfolio (e.g., stocks, bonds, cash), **So that** I can have a clear overview of my portfolio contents at a glance. 
 
@@ -22,7 +22,7 @@
 
 
 
-## 2. Portfolio Performance Viewing
+## 2. Portfolio Performance Viewing - Must have
 
 **As a** portfolio user, **I want** to view the performance of my portfolio in a graphical format (e.g., charts), **So that** I can easily understand how my portfolio is performing over time. 
 
@@ -42,7 +42,7 @@
 
 
 
-## 3. Add Items to Portfolio
+## 3. Add Items to Portfolio - Must have
 
 **As a** portfolio user, **I want** to add new items (e.g., stocks, bonds) to my portfolio, **So that** I can track all my financial assets in one place. 
 
@@ -61,7 +61,7 @@
 
 
 
-## 4. Remove Items from Portfolio
+## 4. Remove Items from Portfolio - Must have
 
 **As a** portfolio user, **I want** to remove existing items from my portfolio, **So that** I can keep my portfolio up-to-date (e.g., when I sell an asset). 
 
@@ -80,7 +80,7 @@
 
 
 
-## 5. View Detailed Item Information
+## 5. View Detailed Item Information - Must have
 
 **As a** portfolio user, **I want** to view detailed information about a specific portfolio item (e.g., current price, purchase value), **So that** I can get more context about each asset in my portfolio. 
 
@@ -96,4 +96,61 @@
 + **T5.2**: **Backend**: Develop GET API to return full details of a single portfolio item (type, ticker, volume, purchase date, current price, total value)
 + **T5.3**: **Frontend**: Build detail view page/component to display full asset information when an item is clicked
 + **T5.4**: **Frontend & Backend**: Test detail data retrieval and display functionality
+
+
+
+## 6. Portfolio Value Calculation - Could Have
+
+**As a** portfolio user, **I want** to see the total value of my portfolio and the value of each individual item, **So that** I can understand my overall financial position. 
+
+### *Acceptance Criteria:*     
+
++ The system calculates the total portfolio value by multiplying each item’s volume by its current price.     
++ The total value and individual item values are displayed prominently in the UI.     
++ The values update automatically when new price data is fetched or items are added/removed.
+
+### Tasks (Portfolio Value Calculation - Could Have)
+
+- **T6.1**: **Backend**: Implement logic to calculate individual item value (volume × current Yahoo price) and total portfolio value
+- **T6.2**: **Backend**: Develop API to return calculated item values and total portfolio value with auto-refresh support
+- **T6.3**: **Frontend**: Display individual item values in portfolio list and total portfolio value prominently in UI
+- **T6.4**: **Frontend & Backend**: Test value calculation accuracy, UI display, and auto-update on price/item changes
+
+
+
+## 7. Portfolio Filtering and Sorting - Could Have
+
+**As a** portfolio user, **I want** to filter and sort portfolio items (e.g., by item type, value, ticker), **So that** I can quickly find specific items or organize my portfolio as needed. 
+
+### *Acceptance Criteria:*     
+
++ I can filter items by type (e.g., stocks only, bonds only).     
++ I can sort items by ticker, volume, or current value (ascending/descending).     
++ The filtering/sorting changes are applied immediately to the portfolio list.
+
+### Tasks (Portfolio Filtering and Sorting - Could Have)
+
+- **T7.1**: **Backend**: Update portfolio list API to support filtering by item type and sorting by ticker/volume/value
+- **T7.2**: **Backend**: Add validation for filter/sort parameters and optimize query performance
+- **T7.3**: **Frontend**: Add filter dropdown and sort options to the portfolio list page
+- **T7.4**: **Frontend & Backend**: Test end-to-end filter/sort functionality and immediate list updates
+
+
+
+## 8. Historical Performance Comparison - Could Have
+
+**As a** portfolio user, **I want** to compare my portfolio’s performance over different time periods (e.g., 1 week, 1 month, 1 year), **So that** I can analyze how my portfolio has performed over time. 
+
+### *Acceptance Criteria:*     
+
+- I can select a time period from a dropdown (e.g., 1 week, 1 month, custom range).     
+- The performance chart updates to show data for the selected time period.     
+- The chart includes a comparison of the portfolio’s value at the start and end of the period, plus any gains/losses.
+
+### Tasks (Historical Performance Comparison - Could Have)
+
+- **T8.1**: **Backend**: Extend Yahoo integration to fetch historical price data for specified time periods
+- **T8.2**: **Backend**: Update performance API to accept time period params and return start/end value + gains/losses
+- **T8.3**: **Frontend**: Add time period dropdown and update chart to show historical performance data
+- **T8.4**: **Frontend & Backend**: Test time period selection, historical data retrieval, and gain/loss calculation
 
