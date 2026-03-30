@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bc94e000-fba8-4d34-9ecf-a4e3dbfd3626" name="Changes" comment="Update UserStories.md, add 3 new Could-Have-User-Stories." />
+    <list default="true" id="bc94e000-fba8-4d34-9ecf-a4e3dbfd3626" name="Changes" comment="add api doc">
+      <change beforePath="$PROJECT_DIR$/docs/Database ER Diagram.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/Database ER Diagram.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/User Stories.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/User Stories.md" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -104,7 +107,23 @@
       <option name="project" value="LOCAL" />
       <updated>1774853743428</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="add database er diagram">
+      <option name="closed" value="true" />
+      <created>1774854930901</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1774854930901</updated>
+    </task>
+    <task id="LOCAL-00007" summary="add api doc">
+      <option name="closed" value="true" />
+      <created>1774855335930</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1774855335930</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -124,6 +143,8 @@
     <MESSAGE value="Create docs and UserStories.md" />
     <MESSAGE value="Update UserStories.md, breakdown USs into Tasks" />
     <MESSAGE value="Update UserStories.md, add 3 new Could-Have-User-Stories." />
-    <option name="LAST_COMMIT_MESSAGE" value="Update UserStories.md, add 3 new Could-Have-User-Stories." />
+    <MESSAGE value="add database er diagram" />
+    <MESSAGE value="add api doc" />
+    <option name="LAST_COMMIT_MESSAGE" value="add api doc" />
   </component>
 </project>

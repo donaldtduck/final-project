@@ -55,7 +55,7 @@
 ### Tasks
 
 + **T3.1**: **Backend**: Create database schema for portfolio items and implement POST API to save new assets with input validation
-+ **T3.2**: **Backend**: Update business logic to refresh portfolio performance data when new items are added
++ **T3.2**: **Backend**: Retrieve all the available stocks and implement GET API to render them to frontend
 + **T3.3**: **Frontend**: Build input form to submit new asset details and display validation error messages
 + **T3.4**: **Frontend & Backend**: Test end-to-end flow – form submission, API validation, list refresh, and chart update
 
