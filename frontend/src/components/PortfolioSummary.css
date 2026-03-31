@@ -21,7 +21,7 @@
 
 /* Individual Summary Card */
 .summary-card {
-    background: linear-gradient(145deg, #731865, #7c104d);
+    background: linear-gradient(145deg, #030d2f, #1b0966);
     color: #fff;
     border-radius: 14px;
     padding: 1.2rem 1.5rem;
@@ -40,7 +40,7 @@
     box-shadow:
         0 12px 30px rgba(218, 112, 214, 0.8),
         0 0 20px rgba(238, 130, 238, 0.6) inset;
-    background: linear-gradient(145deg, #f2c8e0, #e05fcd);
+    background: linear-gradient(145deg, #3d6dc0, #6c72c4);
 }
 
 /* Label (上方标题) */
@@ -86,4 +86,56 @@
     border-radius: 12px;
     background: linear-gradient(135deg, #1a001a, #2e001f);
     box-shadow: 0 0 25px rgba(155, 27, 77, 0.5);
+}
+
+/* Chart Section: 折线图 + 饼图容器 */
+.summary-charts-container {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-end;
+    /* 底部对齐折线图和饼图 */
+    flex-wrap: wrap;
+    /* 响应式布局 */
+}
+
+/* 折线图容器 */
+.line-chart-wrapper {
+    flex: 2;
+    min-width: 300px;
+    height: 300px;
+    /* 和饼图高度一致 */
+    background: linear-gradient(145deg, #1b001b, #30021c);
+    border-radius: 14px;
+    box-shadow: 0 8px 25px rgba(155, 27, 77, 0.5),
+        0 0 15px rgba(218, 112, 214, 0.2) inset;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    /* 线条靠下 */
+}
+
+/* 饼图容器 */
+.pie-chart-wrapper {
+    flex: 1;
+    min-width: 250px;
+    height: 300px;
+    /* 和折线图高度一致 */
+    background: linear-gradient(145deg, #1b001b, #30021c);
+    padding: 1.5rem;
+    border-radius: 14px;
+    box-shadow: 0 8px 25px rgba(155, 27, 77, 0.5),
+        0 0 15px rgba(218, 112, 214, 0.2) inset;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    /* 垂直居中饼图 */
+}
+
+/* 饼图标题 */
+.pie-chart-wrapper h3 {
+    color: #ffc0f5;
+    margin-bottom: 1rem;
+    text-shadow: 0 0 3px rgba(255, 192, 245, 0.6), 0 0 6px rgba(255, 192, 245, 0.4);
 }

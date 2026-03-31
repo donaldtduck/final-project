@@ -13,10 +13,12 @@ const mockPortfolio = [
 
 export default function PortfolioPage() {
     const [portfolio, setPortfolio] = useState([]);
+    const [search, setSearch] = useState('');
+    const [sortKey, setSortKey] = useState('symbol'); // 默认按 symbol 排序
+    const [sortOrder, setSortOrder] = useState('asc'); // asc 或 desc
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // 使用 mock 数据直接渲染
         setPortfolio(mockPortfolio);
         setLoading(false);
     }, []);
@@ -25,7 +27,7 @@ export default function PortfolioPage() {
         totalValue: portfolio.reduce((acc, i) => acc + (i.currentPrice * i.volume), 0),
         totalCost: portfolio.reduce((acc, i) => acc + (i.purchasePrice * i.volume), 0),
         unrealizedPL: portfolio.reduce((acc, i) => acc + ((i.currentPrice - i.purchasePrice) * i.volume), 0),
-        realizedPL: 0, // placeholder
+        realizedPL: 0,
         returnRate: portfolio.length
             ? portfolio.reduce((acc, i) => acc + ((i.currentPrice - i.purchasePrice) / i.purchasePrice), 0) / portfolio.length
             : 0,
@@ -36,7 +38,6 @@ export default function PortfolioPage() {
         holdings: portfolio.length
     };
 
-    // performanceData: 模拟每日总资产变化，用于折线图
     const performanceData = [
         { date: "2026-03-25", value: 100000 },
         { date: "2026-03-26", value: 102500 },
@@ -47,33 +48,143 @@ export default function PortfolioPage() {
         { date: "2026-03-31", value: summary.totalValue }
     ];
 
+    const pieData = portfolio.map(item => ({
+        name: item.symbol,
+        value: item.volume * item.currentPrice
+    }));
+
+    // 过滤 + 排序
+    const filteredPortfolio = portfolio
+        .filter(item => item.symbol.toLowerCase().includes(search.toLowerCase()) || item.name.toLowerCase().includes(search.toLowerCase()))
+        .sort((a, b) => {
+            let valA = a[sortKey];
+            let valB = b[sortKey];
+            if (typeof valA === 'string') valA = valA.toLowerCase();
+            if (typeof valB === 'string') valB = valB.toLowerCase();
+            if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+            if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+            return 0;
+        });
+
     return (
         <div style={{ padding: '2rem', backgroundColor: '#111', minHeight: '100vh' }}>
             <h1 style={{ color: '#ff1493', marginBottom: '2rem', fontSize: '2rem' }}>My Portfolio</h1>
-            <PortfolioSummary summary={summary} performanceData={performanceData} />
+
+            {/* PortfolioSummary */}
+            <PortfolioSummary summary={summary} performanceData={performanceData} pieData={pieData} />
+
             <Divider />
-            <button
-                onClick={() => setPortfolio(mockPortfolio)}
+
+            {/* 搜索 + 排序 */}
+            <div
                 style={{
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    gap: '1rem',
+                    flexWrap: 'wrap',
                     marginBottom: '1rem',
-                    padding: '0.5rem 1rem',
-                    background: '#6e0b2c',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '6px',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(110,11,44,0.6)'
                 }}
             >
-                Refresh
-            </button>
+                <input
+                    type="text"
+                    placeholder="Search symbol or name"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    style={{
+                        flex: '1 1 auto',
+                        minWidth: '150px', // 搜索框短一点
+                        padding: '0.5rem 1rem',
+                        borderRadius: '6px',
+                        border: 'none',
+                        outline: 'none',
+                        fontSize: '0.95rem',
+                        background: 'linear-gradient(145deg, #030d2f, #1b0966)',
+                        color: '#fff',
+                        boxShadow:
+                            '0 4px 12px rgba(218,112,214,0.4), 0 0 10px rgba(238,130,238,0.2) inset',
+                        transition: 'box-shadow 0.3s, transform 0.3s',
+                    }}
+                    onFocus={(e) =>
+                    (e.target.style.boxShadow =
+                        '0 4px 12px rgba(218,112,214,0.8), 0 0 15px rgba(238,130,238,0.4) inset')
+                    }
+                    onBlur={(e) =>
+                    (e.target.style.boxShadow =
+                        '0 4px 12px rgba(218,112,214,0.4), 0 0 10px rgba(238,130,238,0.2) inset')
+                    }
+                />
+
+                <select
+                    value={sortKey}
+                    onChange={(e) => setSortKey(e.target.value)}
+                    style={{
+                        minWidth: '100px',
+                        flex: '0 0 auto',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '6px',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'linear-gradient(145deg, #030d2f, #1b0966)',
+                        color: '#fff',
+                        boxShadow:
+                            '0 4px 12px rgba(218,112,214,0.4), 0 0 10px rgba(238,130,238,0.2) inset',
+                        cursor: 'pointer',
+                        transition: 'box-shadow 0.3s, transform 0.3s',
+                    }}
+                    onFocus={(e) =>
+                    (e.target.style.boxShadow =
+                        '0 4px 12px rgba(218,112,214,0.8), 0 0 15px rgba(238,130,238,0.4) inset')
+                    }
+                    onBlur={(e) =>
+                    (e.target.style.boxShadow =
+                        '0 4px 12px rgba(218,112,214,0.4), 0 0 10px rgba(238,130,238,0.2) inset')
+                    }
+                >
+                    <option value="symbol">Symbol</option>
+                    <option value="name">Name</option>
+                    <option value="currentPrice">Current Price</option>
+                    <option value="volume">Volume</option>
+                </select>
+
+                <select
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                    style={{
+                        minWidth: '100px',
+                        flex: '0 0 auto',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '6px',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'linear-gradient(145deg, #030d2f, #1b0966)',
+                        color: '#fff',
+                        boxShadow:
+                            '0 4px 12px rgba(218,112,214,0.4), 0 0 10px rgba(238,130,238,0.2) inset',
+                        cursor: 'pointer',
+                        transition: 'box-shadow 0.3s, transform 0.3s',
+                    }}
+                    onFocus={(e) =>
+                    (e.target.style.boxShadow =
+                        '0 4px 12px rgba(218,112,214,0.8), 0 0 15px rgba(238,130,238,0.4) inset')
+                    }
+                    onBlur={(e) =>
+                    (e.target.style.boxShadow =
+                        '0 4px 12px rgba(218,112,214,0.4), 0 0 10px rgba(238,130,238,0.2) inset')
+                    }
+                >
+                    <option value="asc">Asc</option>
+                    <option value="desc">Desc</option>
+                </select>
+            </div>
+
+            {/* PortfolioItem 列表，每行两个 */}
             {loading ? (
                 <div style={{ color: '#fff' }}>Loading...</div>
-            ) : portfolio.length === 0 ? (
-                <div style={{ color: '#fff' }}>Your portfolio is empty.</div>
+            ) : filteredPortfolio.length === 0 ? (
+                <div style={{ color: '#fff' }}>No items found.</div>
             ) : (
-                <div style={{ display: 'grid', gap: '1rem' }}>
-                    {portfolio.map(item => (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                    {filteredPortfolio.map(item => (
                         <PortfolioItem key={item.id} item={item} />
                     ))}
                 </div>
