@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 public class AddStockDto {
 
     private String symbol;
-
     private BigDecimal totalPrice;
     private BigDecimal quantity;
     private LocalDateTime date;

@@ -24,7 +24,8 @@ export async function getPortfolioItem(id) {
 
 export async function addPortfolioItem(item) {
     try {
-        const res = await fetch('/api/stock', {
+        console.log("hahahahahaha");
+        const res = await fetch('http://localhost:8080/api/stock', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(item),
