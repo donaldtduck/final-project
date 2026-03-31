@@ -4,9 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="bc94e000-fba8-4d34-9ecf-a4e3dbfd3626" name="Changes" comment="add api doc">
-      <change beforePath="$PROJECT_DIR$/docs/Database ER Diagram.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/Database ER Diagram.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/User Stories.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/User Stories.md" afterDir="false" />
+    <list default="true" id="bc94e000-fba8-4d34-9ecf-a4e3dbfd3626" name="Changes" comment="amend er diagrams">
+      <change beforePath="$PROJECT_DIR$/frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -123,7 +123,15 @@
       <option name="project" value="LOCAL" />
       <updated>1774855335930</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="amend er diagrams">
+      <option name="closed" value="true" />
+      <created>1774861107624</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1774861107624</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -145,6 +153,7 @@
     <MESSAGE value="Update UserStories.md, add 3 new Could-Have-User-Stories." />
     <MESSAGE value="add database er diagram" />
     <MESSAGE value="add api doc" />
-    <option name="LAST_COMMIT_MESSAGE" value="add api doc" />
+    <MESSAGE value="amend er diagrams" />
+    <option name="LAST_COMMIT_MESSAGE" value="amend er diagrams" />
   </component>
 </project>
