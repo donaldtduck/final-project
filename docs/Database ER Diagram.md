@@ -1,5 +1,5 @@
 ## Database ER Diagram
-- asset
+- asset (abort)
   - symbol
   - name
   - type
@@ -10,14 +10,9 @@
   - quantity(+/-)
   - price
   - date
-- stocks
+- stocks (abort)
   - symbol
-- user-state
+- user-state (abort)
   - username
   - balance
-- recharge-record
-  - id
-  - price
-  - date
-  
 

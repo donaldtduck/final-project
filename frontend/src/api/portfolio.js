@@ -24,15 +24,20 @@ export async function getPortfolioItem(id) {
 
 export async function addPortfolioItem(item) {
     try {
-        const res = await fetch(BASE_URL, {
+        const res = await fetch('/api/stock', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(item),
         });
-        if (!res.ok) throw new Error('Failed to add item');
+
+        if (!res.ok) {
+            const err = await res.text();
+            throw new Error(err || 'Failed to add item');
+        }
+
         return await res.json();
     } catch (error) {
-        console.error(error);
+        console.error('Add item error:', error);
         return null;
     }
 }

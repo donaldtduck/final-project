@@ -99,7 +99,7 @@
 
 
 
-## 6. Portfolio Value Calculation - Could Have
+## 6. Portfolio Value Calculation - Should Have
 
 **As a** portfolio user, **I want** to see the total value of my portfolio and the value of each individual item, **So that** I can understand my overall financial position. 
 
