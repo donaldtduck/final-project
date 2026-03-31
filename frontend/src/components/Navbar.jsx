@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import { useState } from 'react';
 import './Navbar.css';
-import AddStockModal from './AddStockModal';
+import AddStockModal from './AddStockModel';
 
 export default function Navbar({ onAddSuccess }) {
     const [open, setOpen] = useState(false);

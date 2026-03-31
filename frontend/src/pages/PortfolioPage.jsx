@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import PortfolioItem from '../components/PortfolioItem';
 import PortfolioSummary from '../components/PortfolioSummary';
 import Divider from '../components/Divider';
+import Navbar from '../components/Navbar';
 
 // === Mock Data ===
 const mockPortfolio = [
@@ -68,7 +69,12 @@ export default function PortfolioPage() {
 
     return (
         <div style={{ padding: '2rem', backgroundColor: '#111', minHeight: '100vh' }}>
-            <h1 style={{ color: '#ff1493', marginBottom: '2rem', fontSize: '2rem' }}>My Portfolio</h1>
+            <Navbar
+                onAddSuccess={(newItem) => {
+                    setPortfolio(prev => [...prev, newItem]);
+                }}
+            />
+
 
             {/* PortfolioSummary */}
             <PortfolioSummary summary={summary} performanceData={performanceData} pieData={pieData} />

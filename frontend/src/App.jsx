@@ -6,7 +6,6 @@ import StockListPage from './pages/StockListPage';
 export default function App() {
   return (
     <BrowserRouter>
-      <Navbar />
       <Routes>
         <Route path="/portfolio" element={<PortfolioPage />} />
         <Route path="/stocks" element={<StockListPage />} />
