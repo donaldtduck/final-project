@@ -1,0 +1,18 @@
+.divider {
+    height: 4px;
+    width: 100%;
+    margin: 1.5rem 0;
+    background: linear-gradient(90deg, #ff69b4, #ff1493, #ff69b4);
+    border-radius: 2px;
+    animation: flow 3s linear infinite;
+}
+
+@keyframes flow {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    100% {
+        background-position: 100% 50%;
+    }
+}

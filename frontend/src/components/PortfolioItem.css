@@ -1,0 +1,7 @@
+.portfolio-item {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #222;
+    align-items: center;
+}
