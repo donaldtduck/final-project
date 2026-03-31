@@ -15,4 +15,9 @@
 - user-state
   - username
   - balance
+- recharge-record
+  - id
+  - price
+  - date
+  
 

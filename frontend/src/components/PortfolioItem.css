@@ -1,0 +1,68 @@
+/* Portfolio Card */
+.portfolio-card {
+    background: linear-gradient(145deg, #1b001b, #30021c);
+    /* 深紫黑渐变 */
+    color: #fff;
+    border-radius: 14px;
+    padding: 1.5rem 1.8rem;
+    font-family: 'Roboto', sans-serif;
+    box-shadow:
+        0 8px 25px rgba(155, 27, 77, 0.5),
+        0 0 15px rgba(218, 112, 214, 0.2) inset;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* Hover Effect */
+.portfolio-card:hover {
+    transform: translateY(-6px);
+    box-shadow:
+        0 12px 30px rgba(218, 112, 214, 0.8),
+        0 0 20px rgba(238, 130, 238, 0.4) inset;
+    background: linear-gradient(145deg, #30021c, #731865);
+    /* hover 渐变亮一些 */
+}
+
+/* Header: Ticker + Type */
+.portfolio-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #ffc0f5;
+    /* 浅粉发光 */
+    text-shadow:
+        0 0 3px rgba(255, 192, 245, 0.6),
+        0 0 6px rgba(255, 192, 245, 0.4);
+}
+
+/* Details Grid */
+.portfolio-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.8rem;
+}
+
+/* Individual Detail */
+.detail .label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0.85;
+}
+
+.detail .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Positive / Negative Coloring */
+.value.green {
+    color: #0f0;
+}
+
+.value.red {
+    color: #f00;
+}

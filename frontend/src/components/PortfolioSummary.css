@@ -1,0 +1,89 @@
+/* Portfolio Summary Container */
+.portfolio-summary-container {
+    background-color: #111;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    box-shadow: 0 0 30px rgba(155, 27, 77, 0.5);
+}
+
+/* Summary Cards Grid */
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    /* 最小宽度减小 */
+    gap: 1rem;
+    /* 缩小间距 */
+}
+
+/* Individual Summary Card */
+.summary-card {
+    background: linear-gradient(145deg, #731865, #7c104d);
+    color: #fff;
+    border-radius: 14px;
+    padding: 1.2rem 1.5rem;
+    /* 缩小 padding */
+    text-align: center;
+    font-family: 'Roboto', sans-serif;
+    box-shadow:
+        0 8px 25px rgba(218, 112, 214, 0.5),
+        0 0 15px rgba(238, 130, 238, 0.3) inset;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+}
+
+/* Hover Effect */
+.summary-card:hover {
+    transform: translateY(-6px);
+    box-shadow:
+        0 12px 30px rgba(218, 112, 214, 0.8),
+        0 0 20px rgba(238, 130, 238, 0.6) inset;
+    background: linear-gradient(145deg, #f2c8e0, #e05fcd);
+}
+
+/* Label (上方标题) */
+.summary-card .label {
+    font-size: 1.2rem;
+    /* 放大标题字体 */
+    font-weight: 600;
+    color: #ffc0f5;
+    /* 浅粉色，和下面的数字区分 */
+    text-shadow:
+        0 0 3px rgba(255, 192, 245, 0.6),
+        0 0 6px rgba(255, 192, 245, 0.4);
+    /* 微微发光 */
+    white-space: nowrap;
+    /* 不换行 */
+    display: block;
+    margin-bottom: 0.3rem;
+}
+
+/* Value (下面数字) 保持现有样式 */
+.summary-card .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 0.2rem;
+    white-space: nowrap;
+    /* 防止换行 */
+}
+
+/* 正负颜色 */
+.summary-card .green {
+    color: #0f0;
+}
+
+.summary-card .red {
+    color: #f00;
+}
+
+/* Chart Section */
+.summary-chart {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1a001a, #2e001f);
+    box-shadow: 0 0 25px rgba(155, 27, 77, 0.5);
+}
