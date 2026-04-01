@@ -2,8 +2,10 @@
 package com.finance.portfolio.service.impl;
 
 import cn.hutool.core.annotation.Alias;
+import com.finance.portfolio.exception.BusinessException;
 import com.finance.portfolio.mapper.TransactionRecordMapper;
 import com.finance.portfolio.model.dto.AddStockDto;
+import com.finance.portfolio.model.dto.RemoveStockDto;
 import com.finance.portfolio.model.entity.TransactionRecord;
 import com.finance.portfolio.model.vo.StockVo;
 import com.finance.portfolio.service.StockService;
@@ -77,5 +79,34 @@ public class StockServiceImpl implements StockService {
 
             return vo;
         }).collect(Collectors.toList());
+    }
+
+    // ====== 新增：用户故事4 移除资产核心逻辑 ======
+    @Override
+    public void removeStock(RemoveStockDto removeStockDto) {
+        // 1. 获取当前股票的持仓总数量（从交易记录汇总）
+        Double holdingQuantity = transactionRecordMapper.getHoldingQuantity(removeStockDto.getSymbol());
+        // 校验：股票无持仓记录
+        if (holdingQuantity == null || holdingQuantity <= 0) {
+            throw new BusinessException(400, "该股票暂无持仓，无法移除");
+        }
+        // 2. 核心校验：持仓数量 ≥ 移除数量（避免超量移除）
+        BigDecimal removeQty = removeStockDto.getQuantity();
+        if (removeQty.doubleValue() > holdingQuantity) {
+            throw new BusinessException(400, "持仓数量不足，当前持仓：" + holdingQuantity + "股，尝试移除：" + removeQty + "股");
+        }
+        // 3. 获取操作日期的股票收盘价（与添加资产逻辑一致，保证价格准确性）
+        BigDecimal closePriceByDate = sinaStockApiUtil.getClosePriceByDate(removeStockDto.getSymbol(), removeStockDto.getDate());
+        if (closePriceByDate.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(400, "获取股票价格失败，请检查代码或日期是否正确");
+        }
+        // 4. 构建交易记录：移除数量转为【负数】存入（代表卖出/移除）
+        TransactionRecord transactionRecord = new TransactionRecord();
+        transactionRecord.setSymbol(removeStockDto.getSymbol());
+        transactionRecord.setDate(removeStockDto.getDate());
+        transactionRecord.setQuantity(-removeQty.doubleValue()); // 关键：转负数
+        transactionRecord.setPrice(closePriceByDate.doubleValue());
+        // 5. 存入数据库
+        transactionRecordMapper.insertRecord(transactionRecord);
     }
 }
