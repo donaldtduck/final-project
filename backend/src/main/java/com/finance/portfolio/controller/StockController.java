@@ -1,12 +1,13 @@
-
 package com.finance.portfolio.controller;
 
 import com.finance.portfolio.model.dto.AddStockDto;
+import com.finance.portfolio.model.dto.RemoveStockDto;
 import com.finance.portfolio.model.dto.StockQueryDto;
 import com.finance.portfolio.model.vo.StockHistoryVo;
 import com.finance.portfolio.model.vo.StockVo;
 import com.finance.portfolio.service.StockService;
 import com.finance.portfolio.util.SinaStockApiUtil;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -42,6 +43,13 @@ public class StockController {
     public ResponseEntity<List<StockVo>> getStockList() {
         List<StockVo> stockListWithPnl = stockService.getStockListWithPnl();
         return ResponseEntity.ok(stockListWithPnl);
+    }
+
+    // ====== 新增：用户故事4 - 移除资产接口 ======
+    @PutMapping("/removings")
+    public ResponseEntity<String> removeStock(@Valid @RequestBody RemoveStockDto removeStockDto) {
+        stockService.removeStock(removeStockDto);
+        return ResponseEntity.ok("资产移除成功"); // 直接返回ok，符合需求
     }
 
 }
