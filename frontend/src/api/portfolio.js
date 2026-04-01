@@ -17,6 +17,21 @@ export async function getPortfolio() {
     }
 }
 
+export async function getStockPerformance(symbol, slice = 30, unit = 'DAY') {
+    try {
+        const res = await fetch(
+            `http://localhost:8080/api/stock/performance/${symbol}/${slice}/${unit}`
+        );
+
+        if (!res.ok) throw new Error('Failed to fetch performance');
+
+        return await res.json();
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
+}
+
 export async function addPortfolioItem(item) {
     try {
         console.log("hahahahahaha");
