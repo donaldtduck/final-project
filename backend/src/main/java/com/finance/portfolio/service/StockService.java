@@ -1,3 +1,4 @@
+
 package com.finance.portfolio.service;
 
 import com.finance.portfolio.model.dto.AddStockDto;
@@ -11,6 +12,9 @@ public interface StockService {
     public void addStock(AddStockDto addStockDto);
 
     List<StockVo> getStockListWithPnl();
+
+
+    List<StockVo> getStockHoldings();
 
     // 新增：用户故事4：移除资产
     void removeStock(RemoveStockDto removeStockDto);
