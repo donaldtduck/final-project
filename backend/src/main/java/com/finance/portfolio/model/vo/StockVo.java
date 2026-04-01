@@ -39,6 +39,8 @@ public class StockVo {
      */
     private BigDecimal unrealizedPnl;
 
+    private BigDecimal realizedPnl;
+
     /**
      * 今日盈亏
      * 对应 UI Today P/L

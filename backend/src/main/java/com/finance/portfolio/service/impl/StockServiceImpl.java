@@ -17,9 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,9 +38,9 @@ public class StockServiceImpl implements StockService {
         // optional field
 
         if (addStockDto.getQuantity() == null) {
-            transactionRecord.setQuantity(addStockDto.getTotalPrice().doubleValue() / closePriceByDate.doubleValue());
+            transactionRecord.setQuantity(Math.floor(addStockDto.getTotalPrice().doubleValue() / closePriceByDate.doubleValue()));
         } else {
-            transactionRecord.setQuantity(addStockDto.getQuantity().doubleValue());
+            transactionRecord.setQuantity(Math.floor(addStockDto.getQuantity().doubleValue()));
         }
         transactionRecord.setPrice(closePriceByDate.doubleValue());
 
@@ -139,6 +137,7 @@ public class StockServiceImpl implements StockService {
                     String symbol = entry.getKey();
                     List<TransactionRecord> records = entry.getValue();
 
+                    Collections.sort(records, Comparator.comparing(TransactionRecord::getDate));
                     // === 核心：计算总持仓数量、总投入成本 ===
                     BigDecimal totalQuantity = BigDecimal.ZERO;
                     BigDecimal totalCost = BigDecimal.ZERO;
@@ -159,6 +158,29 @@ public class StockServiceImpl implements StockService {
                     // === 计算 平均成本价（真正正确的 PurchasePrice）===
                     BigDecimal avgPrice = totalCost.divide(totalQuantity, 4, RoundingMode.HALF_UP);
 
+                    // ===================== 计算 已实现盈亏 Realized P&L =====================
+                    BigDecimal realizedPnl = BigDecimal.ZERO;
+                    BigDecimal remainingQty = BigDecimal.ZERO;
+
+                    for (TransactionRecord record : records) {
+                        BigDecimal qty = new BigDecimal(record.getQuantity());
+                        BigDecimal price = new BigDecimal(record.getPrice());
+                        if (qty.compareTo(BigDecimal.ZERO) > 0) {
+                            // 买入：增加持仓
+                            remainingQty = remainingQty.add(qty);
+                        } else {
+                            // 卖出：计算已实现盈亏
+                            BigDecimal sellQty = qty.abs();
+                            System.out.println("remainingQty: " + remainingQty + " sellQty: " + sellQty);
+                            if (remainingQty.compareTo(sellQty) >= 0) {
+                                System.out.println("price:" + price + "avgPrice:" + avgPrice);
+                                BigDecimal profit = price.subtract(avgPrice).multiply(sellQty);
+                                realizedPnl = realizedPnl.add(profit);
+                            }
+                            remainingQty = remainingQty.subtract(sellQty);
+                        }
+                    }
+
                     // === 当前价格 & 昨日收盘价 ===
                     BigDecimal currentPrice = sinaStockApiUtil.getCurrentPrice(symbol);
                     BigDecimal lastClose = sinaStockApiUtil.getLastClosePrice(symbol);
@@ -169,6 +191,7 @@ public class StockServiceImpl implements StockService {
                     vo.setVolume(totalQuantity.intValue());
                     vo.setPurchasePrice(avgPrice); // ✅ 正确：平均成本
                     vo.setCurrentPrice(currentPrice);
+                    vo.setRealizedPnl(realizedPnl);
 
                     // === 浮动盈亏 = (当前价 - 平均成本) * 数量 ===
                     BigDecimal unrealizedPnl = currentPrice

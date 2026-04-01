@@ -5,6 +5,7 @@ import com.finance.portfolio.model.vo.PortfolioOverviewVo;
 import com.finance.portfolio.service.PortfolioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,12 +21,14 @@ public class PortfolioController {
      * 获取投资组合总览数据
      */
     @GetMapping("/overview")
-    public PortfolioOverviewVo getOverview() {
-        return portfolioService.getOverview();
+    public ResponseEntity<PortfolioOverviewVo> getOverview() {
+        PortfolioOverviewVo overview = portfolioService.getOverview();
+        return ResponseEntity.ok(overview);
     }
 
     @GetMapping("/chart")
-    public PortfolioChartVo getPortfolioChart() {
-        return portfolioService.getPortfolioChart();
+    public ResponseEntity<PortfolioChartVo> getPortfolioChart() {
+        PortfolioChartVo portfolioChart = portfolioService.getPortfolioChart();
+        return ResponseEntity.ok(portfolioChart);
     }
 }

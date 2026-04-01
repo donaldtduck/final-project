@@ -38,6 +38,8 @@ export default function PortfolioPage() {
                     purchasePrice: Number(item.purchasePrice).toFixed(2),
                     currentPrice: Number(item.currentPrice).toFixed(2),
                     prevClose: Number(item.currentPrice).toFixed(2),
+                    unrealizedPnl: item.unrealizedPnl,
+                    todayPnl: item.todayPnl
                 }));
 
                 console.log(mapped);

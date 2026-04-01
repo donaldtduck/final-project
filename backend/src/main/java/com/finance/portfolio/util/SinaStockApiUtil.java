@@ -2,6 +2,10 @@ package com.finance.portfolio.util;
 
 import com.finance.portfolio.model.dto.StockQueryDto;
 import com.finance.portfolio.model.vo.StockHistoryVo;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -86,45 +90,109 @@ public class SinaStockApiUtil {
 
     // ---------------- 我给你补的：获取当前价格（最新收盘价） ----------------
     public BigDecimal getCurrentPrice(String symbol) {
-        String url = "https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData"
-                + "?symbol=" + symbol
-                + "&scale=240"
-                + "&ma=no"
-                + "&datalen=1"; // 只取最新一条数据
-
+//        String url = "https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData"
+//                + "?symbol=" + symbol
+//                + "&scale=240"
+//                + "&ma=no"
+//                + "&datalen=1"; // 只取最新一条数据
+//
+//        try {
+//            List<Map<String, String>> rawList = restTemplate.getForObject(url, List.class);
+//            if (rawList == null || rawList.isEmpty()) {
+//                return BigDecimal.ZERO;
+//            }
+//
+//            // 取第一条 = 最新价格
+//            Map<String, String> latest = rawList.get(0);
+//            return new BigDecimal(latest.get("close"));
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        return BigDecimal.ZERO;
         try {
-            List<Map<String, String>> rawList = restTemplate.getForObject(url, List.class);
-            if (rawList == null || rawList.isEmpty()) {
+            symbol = symbol.toLowerCase();
+            String url = "https://hq.sinajs.cn/list=" + symbol;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Referer", "https://finance.sina.com");
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<String> resp = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    String.class
+            );
+
+            String body = resp.getBody();
+            if (body == null || !body.contains(",")) {
+                System.err.println("新浪返回数据无效: " + body);
                 return BigDecimal.ZERO;
             }
 
-            // 取第一条 = 最新价格
-            Map<String, String> latest = rawList.get(0);
-            return new BigDecimal(latest.get("close"));
+            // 正确提取数据
+            String data = body.split("\"")[1];
+            String[] arr = data.split(",");
 
+            if (arr.length > 3) {
+                return new BigDecimal(arr[3]);
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+            // 不崩溃，只打印日志
+            System.err.println("获取当前价失败: " + e.getMessage());
         }
         return BigDecimal.ZERO;
     }
 
     // ---------------- 额外补：获取昨日收盘价（你计算 todayPnl 必须用到！） ----------------
     public BigDecimal getLastClosePrice(String symbol) {
-        String url = "https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData"
-                + "?symbol=" + symbol
-                + "&scale=240"
-                + "&ma=no"
-                + "&datalen=2"; // 取最近2条
-
+//        String url = "https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData"
+//                + "?symbol=" + symbol
+//                + "&scale=240"
+//                + "&ma=no"
+//                + "&datalen=2"; // 取最近2条
+//
+//        try {
+//            List<Map<String, String>> rawList = restTemplate.getForObject(url, List.class);
+//            if (rawList == null || rawList.size() < 2) {
+//                return BigDecimal.ZERO;
+//            }
+//            // 第二条 = 昨日收盘价
+//            return new BigDecimal(rawList.get(1).get("close"));
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        return BigDecimal.ZERO;
         try {
-            List<Map<String, String>> rawList = restTemplate.getForObject(url, List.class);
-            if (rawList == null || rawList.size() < 2) {
+            symbol = symbol.toLowerCase();
+            String url = "https://hq.sinajs.cn/list=" + symbol;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Referer", "https://finance.sina.com");
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<String> resp = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    String.class
+            );
+
+            String body = resp.getBody();
+            if (body == null || !body.contains(",")) {
+                System.err.println("新浪返回数据无效: " + body);
                 return BigDecimal.ZERO;
             }
-            // 第二条 = 昨日收盘价
-            return new BigDecimal(rawList.get(1).get("close"));
+
+            String data = body.split("\"")[1];
+            String[] arr = data.split(",");
+
+            if (arr.length > 2) {
+                return new BigDecimal(arr[2]);
+            }
         } catch (Exception e) {
-            e.printStackTrace();
+            System.err.println("获取昨日收盘价失败: " + e.getMessage());
         }
         return BigDecimal.ZERO;
     }

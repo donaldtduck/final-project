@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
@@ -18,10 +18,10 @@ import {
 
 import { CSS } from '@dnd-kit/utilities';
 
+import { getPortfolioOverview, getPortfolioChart, getPortfolio } from '../api/portfolio';
 import './PortfolioSummary.css';
 
-
-// ✅ 可拖拽卡片组件
+// 可拖拽卡片
 function SortableCard({ id, label, value, className }) {
     const {
         attributes,
@@ -51,111 +51,149 @@ function SortableCard({ id, label, value, className }) {
     );
 }
 
-
-export default function PortfolioSummary({ summary, performanceData, pieData }) {
+export default function PortfolioSummary() {
     const COLORS = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
 
-    // ✅ 8个指标（可拖拽）
+    const [summary, setSummary] = useState({
+        totalValue: 0,
+        totalCost: 0,
+        unrealizedPnl: 0,
+        realizedPnl: 0,
+        returnRate: 0,
+        todayPnl: 0,
+        todayChange: 0,
+        totalHoldings: 0,
+    });
+
+    const [chartData, setChartData] = useState([]);
+    const [pieData, setPieData] = useState([]);
+    const [loading, setLoading] = useState(true);
+
     const [items, setItems] = useState([
-        {
-            id: 'totalValue',
-            label: 'Total Value',
-            render: () => `$${summary.totalValue.toFixed(2)}`
-        },
-        {
-            id: 'totalCost',
-            label: 'Total Cost',
-            render: () => `$${summary.totalCost.toFixed(2)}`
-        },
-        {
-            id: 'unrealized',
-            label: 'Unrealized P/L',
-            render: () => `$${summary.unrealizedPL.toFixed(2)}`,
-            className: summary.unrealizedPL >= 0 ? 'green' : 'red'
-        },
-        {
-            id: 'realized',
-            label: 'Realized P/L',
-            render: () => `$${summary.realizedPL.toFixed(2)}`
-        },
-        {
-            id: 'return',
-            label: 'Return',
-            render: () => `${(summary.returnRate * 100).toFixed(2)}%`
-        },
-        {
-            id: 'todayPL',
-            label: 'Today P/L',
-            render: () => `$${summary.todayPL.toFixed(2)}`,
-            className: summary.todayPL >= 0 ? 'green' : 'red'
-        },
-        {
-            id: 'todayChange',
-            label: 'Today Change',
-            render: () => `${(summary.todayChange * 100).toFixed(2)}%`,
-            className: summary.todayChange >= 0 ? 'green' : 'red'
-        },
-        {
-            id: 'holdings',
-            label: 'Holdings',
-            render: () => summary.holdings
-        }
+        { id: 'totalValue', label: 'Total Value' },
+        { id: 'totalCost', label: 'Total Cost' },
+        { id: 'unrealized', label: 'Unrealized P/L' },
+        { id: 'realized', label: 'Realized P/L' },
+        { id: 'return', label: 'Return' },
+        { id: 'todayPL', label: 'Today P/L' },
+        { id: 'todayChange', label: 'Today Change' },
+        { id: 'holdings', label: 'Holdings' },
     ]);
 
-    // ✅ 拖拽结束逻辑
     const handleDragEnd = (event) => {
         const { active, over } = event;
-
         if (!over) return;
-
         if (active.id !== over.id) {
             const oldIndex = items.findIndex(i => i.id === active.id);
             const newIndex = items.findIndex(i => i.id === over.id);
-
             setItems(arrayMove(items, oldIndex, newIndex));
+        }
+    };
+
+    useEffect(() => {
+        const load = async () => {
+            // 1. 加载总览
+            const overview = await getPortfolioOverview();
+            // 2. 加载图表
+            const chart = await getPortfolioChart();
+            // 3. 加载持仓列表（用来生成饼图）
+            const holdings = await getPortfolio();
+
+            setSummary(overview);
+
+            // 图表数据格式化
+            const formatted = chart?.navList?.map((nav, i) => ({
+                date: nav.date,
+                value: nav.totalNav,
+                cost: chart.costList[i]?.totalCost || 0,
+            })) || [];
+            setChartData(formatted);
+
+            // ======================
+            // 🔥 饼图数据自动生成
+            // ======================
+            const pie = holdings.map(item => ({
+                name: item.symbol,
+                value: item.currentPrice * item.volume
+            }));
+            setPieData(pie);
+
+            setLoading(false);
+        };
+        load();
+    }, []);
+
+    if (loading) {
+        return <div style={{ color: '#fff', padding: '2rem' }}>Loading...</div>;
+    }
+
+    const getCardContent = (id) => {
+        switch (id) {
+            case 'totalValue':
+                return { value: `$${Number(summary.totalValue).toFixed(2)}` };
+            case 'totalCost':
+                return { value: `$${Number(summary.totalCost).toFixed(2)}` };
+            case 'unrealized':
+                return {
+                    value: `$${Number(summary.unrealizedPnl).toFixed(2)}`,
+                    className: Number(summary.unrealizedPnl) >= 0 ? 'green' : 'red'
+                };
+            case 'realized':
+                return {
+                    value: `$${Number(summary.realizedPnl).toFixed(2)}`,
+                    className: Number(summary.realizedPnl) >= 0 ? 'green' : 'red'
+                };
+            case 'return':
+                return {
+                    value: `${Number(summary.returnRate).toFixed(2)}%`,
+                    className: Number(summary.returnRate) >= 0 ? 'green' : 'red'
+                };
+            case 'todayPL':
+                return {
+                    value: `$${Number(summary.todayPnl).toFixed(2)}`,
+                    className: Number(summary.todayPnl) >= 0 ? 'green' : 'red'
+                };
+            case 'todayChange':
+                return {
+                    value: `${Number(summary.todayChange).toFixed(2)}%`,
+                    className: Number(summary.todayChange) >= 0 ? 'green' : 'red'
+                };
+            case 'holdings':
+                return { value: summary.totalHoldings };
+            default:
+                return { value: '' };
         }
     };
 
     return (
         <div className="portfolio-summary-container">
-
-            {/* ✅ 可拖拽 8 个指标 */}
             <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext
-                    items={items.map(i => i.id)}
-                    strategy={rectSortingStrategy}
-                >
-                    <div
-                        className="summary-cards"
-                        style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(8, 1fr)',
-                            gap: '1rem'
-                        }}
-                    >
-                        {items.map(item => (
-                            <SortableCard
-                                key={item.id}
-                                id={item.id}
-                                label={item.label}
-                                value={item.render()}
-                                className={item.className}
-                            />
-                        ))}
+                <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
+                    <div className="summary-cards" style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(8, 1fr)',
+                        gap: '1rem'
+                    }}>
+                        {items.map(item => {
+                            const c = getCardContent(item.id);
+                            return (
+                                <SortableCard
+                                    key={item.id}
+                                    id={item.id}
+                                    label={item.label}
+                                    value={c.value}
+                                    className={c.className}
+                                />
+                            );
+                        })}
                     </div>
                 </SortableContext>
             </DndContext>
 
-            {/* 图表区域 */}
             <div className="summary-charts-container">
-
-                {/* 折线图 */}
                 <div className="line-chart-wrapper">
                     <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
-                            data={performanceData}
-                            margin={{ top: 10, right: 20, left: 0, bottom: 30 }}
-                        >
+                        <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 30 }}>
                             <defs>
                                 <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
                                     <stop offset="0%" stopColor="#9b1b4d" />
@@ -163,43 +201,16 @@ export default function PortfolioSummary({ summary, performanceData, pieData }) 
                                     <stop offset="100%" stopColor="#9b1b4d" />
                                 </linearGradient>
                             </defs>
-
-                            <XAxis
-                                dataKey="date"
-                                stroke="#ff69b4"
-                                tickLine={false}
-                                axisLine={{ stroke: '#ff69b4' }}
-                            />
-
-                            <YAxis
-                                stroke="#ff69b4"
-                                tickLine={false}
-                                axisLine={{ stroke: '#ff69b4' }}
-                                domain={['dataMin', 'dataMax']}
-                            />
-
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: '#222',
-                                    border: 'none',
-                                    color: '#fff',
-                                    boxShadow: '0 4px 12px rgba(218,112,214,0.5)',
-                                }}
-                            />
-
-                            <Line
-                                type="monotone"
-                                dataKey="value"
-                                stroke="url(#lineGradient)"
-                                strokeWidth={3}
-                                dot={{ r: 4, fill: '#ff1493', stroke: '#fff', strokeWidth: 1 }}
-                                isAnimationActive={false}
-                            />
+                            <XAxis dataKey="date" stroke="#ff69b4" tickLine={false} axisLine={{ stroke: '#ff69b4' }} />
+                            <YAxis stroke="#ff69b4" tickLine={false} axisLine={{ stroke: '#ff69b4' }} />
+                            <Tooltip contentStyle={{ backgroundColor: '#222', border: 'none', color: '#fff' }} />
+                            <Line type="monotone" dataKey="value" stroke="url(#lineGradient)" strokeWidth={3} dot={{ r: 4, fill: '#ff1493', stroke: '#fff' }} />
+                            <Line type="monotone" dataKey="cost" stroke="#aaa" strokeWidth={2} dot={false} />
                         </LineChart>
                     </ResponsiveContainer>
                 </div>
 
-                {/* 饼图 */}
+                {/* 🔥 修复后的饼图 */}
                 <div className="pie-chart-wrapper">
                     <h3>Portfolio Share</h3>
                     <PieChart width={250} height={250}>
@@ -210,24 +221,16 @@ export default function PortfolioSummary({ summary, performanceData, pieData }) 
                             cx="50%"
                             cy="50%"
                             outerRadius={100}
-                            label={{ fill: '#fff', fontSize: 12 }}
+                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                         >
-                            {pieData.map((entry, index) => (
+                            {pieData.map((_, index) => (
                                 <Cell key={index} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Pie>
-                        <Tooltip
-                            contentStyle={{
-                                backgroundColor: '#222',
-                                border: 'none',
-                                color: '#fff',
-                                boxShadow: '0 4px 12px rgba(218,112,214,0.5)'
-                            }}
-                        />
+                        <Tooltip contentStyle={{ backgroundColor: '#222', color: '#fff' }} />
                         <Legend wrapperStyle={{ color: '#fff', fontSize: '0.8rem' }} />
                     </PieChart>
                 </div>
-
             </div>
         </div>
     );
