@@ -26,22 +26,22 @@ export default function PortfolioItem({ item, performanceData }) {
                 </div>
                 <div className="detail">
                     <div className="label">Purchase Price</div>
-                    <div className="value">{item.purchasePrice.toFixed(2)}</div>
+                    <div className="value">{Number(item.purchasePrice).toFixed(2)}</div>
                 </div>
                 <div className="detail">
                     <div className="label">Current Price</div>
-                    <div className="value">{item.currentPrice.toFixed(2)}</div>
+                    <div className="value">{Number(item.currentPrice).toFixed(2)}</div>
                 </div>
                 <div className="detail">
                     <div className="label">Unrealized P/L</div>
                     <div className={`value ${plColor(unrealizedPL)}`}>
-                        {unrealizedPL.toFixed(2)}
+                        {Number(unrealizedPL).toFixed(2)}
                     </div>
                 </div>
                 <div className="detail">
                     <div className="label">Today P/L</div>
                     <div className={`value ${plColor(todayPL)}`}>
-                        {todayPL.toFixed(2)}
+                        {Number(todayPL).toFixed(2)}
                     </div>
                 </div>
             </div>

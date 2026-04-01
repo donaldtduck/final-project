@@ -72,7 +72,7 @@ public class SinaStockApiUtil {
 
             for (Map<String, String> map : rawList) {
                 LocalDate day = LocalDate.parse(map.get("day"), DAY_FMT);
-                if (day.equals(targetDate)) {
+                if (day.equals(targetDate) || targetDate.isBefore(day)) {
                     return new BigDecimal(map.get("close"));
                 }
             }

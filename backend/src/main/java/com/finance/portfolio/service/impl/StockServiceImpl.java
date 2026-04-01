@@ -30,6 +30,7 @@ public class StockServiceImpl implements StockService {
         transactionRecord.setSymbol(addStockDto.getSymbol());
         transactionRecord.setDate(addStockDto.getDate());
         // optional field
+
         if (addStockDto.getQuantity() == null) {
             transactionRecord.setQuantity(addStockDto.getTotalPrice().doubleValue() / closePriceByDate.doubleValue());
         } else {

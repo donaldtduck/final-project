@@ -3,6 +3,7 @@ import PortfolioItem from '../components/PortfolioItem';
 import PortfolioSummary from '../components/PortfolioSummary';
 import Divider from '../components/Divider';
 import Navbar from '../components/Navbar';
+import { getPortfolio } from '../api/portfolio';
 
 // === Mock Data ===
 const mockPortfolio = [
@@ -27,18 +28,19 @@ export default function PortfolioPage() {
 
             const res = await getPortfolio();
 
-            if (res && res.data) {
-                // 🔥 后端返回的是 StockVo，要适配前端字段
-                const mapped = res.data.map((item, index) => ({
+            console.log(res);
+            if (Array.isArray(res)) {
+                const mapped = res.map((item, index) => ({
                     id: index + 1,
                     symbol: item.symbol,
-                    name: item.symbol, // 暂时用 symbol 代替 name
+                    name: item.symbol,
                     volume: item.volume,
-                    purchasePrice: Number(item.purchasePrice),
-                    currentPrice: Number(item.currentPrice),
-                    prevClose: Number(item.currentPrice), // 临时用 currentPrice
+                    purchasePrice: Number(item.purchasePrice).toFixed(2),
+                    currentPrice: Number(item.currentPrice).toFixed(2),
+                    prevClose: Number(item.currentPrice).toFixed(2),
                 }));
 
+                console.log(mapped);
                 setPortfolio(mapped);
             }
 
@@ -80,7 +82,10 @@ export default function PortfolioPage() {
 
     // 过滤 + 排序
     const filteredPortfolio = portfolio
-        .filter(item => item.symbol.toLowerCase().includes(search.toLowerCase()) || item.name.toLowerCase().includes(search.toLowerCase()))
+        .filter(item =>
+            item.symbol.toLowerCase().includes(search.toLowerCase()) ||
+            item.name.toLowerCase().includes(search.toLowerCase())
+        )
         .sort((a, b) => {
             let valA = a[sortKey];
             let valB = b[sortKey];

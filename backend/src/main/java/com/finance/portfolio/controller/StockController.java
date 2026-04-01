@@ -38,8 +38,9 @@ public class StockController {
      * GET 请求：返回所有持仓股票的列表（包含盈亏计算）
      */
     @GetMapping("/holdings")
-    public List<StockVo> getStockList() {
-        return stockService.getStockListWithPnl();
+    public ResponseEntity<List<StockVo>> getStockList() {
+        List<StockVo> stockListWithPnl = stockService.getStockListWithPnl();
+        return ResponseEntity.ok(stockListWithPnl);
     }
 
 }
