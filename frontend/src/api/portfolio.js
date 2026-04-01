@@ -1,23 +1,33 @@
-const BASE_URL = '/api/portfolio';
+const BASE_URL = 'http://localhost:8080/api/stock';
 
-export async function getPortfolio(sortBy = 'ticker', order = 'asc') {
+// ✅ 获取所有股票
+export async function getPortfolio() {
     try {
-        const res = await fetch(`${BASE_URL}?sortBy=${sortBy}&order=${order}`);
-        if (!res.ok) throw new Error('Failed to fetch portfolio');
+        const res = await fetch(BASE_URL + '/holdings');
+
+        if (!res.ok) {
+            const err = await res.text();
+            throw new Error(err || 'Failed to fetch portfolio');
+        }
+
         return await res.json();
     } catch (error) {
-        console.error(error);
+        console.error('Fetch portfolio error:', error);
         return [];
     }
 }
 
-export async function getPortfolioItem(id) {
+export async function getStockPerformance(symbol, slice = 30, unit = 'DAY') {
     try {
-        const res = await fetch(`${BASE_URL}/${id}`);
-        if (!res.ok) throw new Error('Failed to fetch portfolio item');
+        const res = await fetch(
+            `http://localhost:8080/api/stock/performance/${symbol}/${slice}/${unit}`
+        );
+
+        if (!res.ok) throw new Error('Failed to fetch performance');
+
         return await res.json();
-    } catch (error) {
-        console.error(error);
+    } catch (err) {
+        console.error(err);
         return null;
     }
 }
@@ -43,13 +53,3 @@ export async function addPortfolioItem(item) {
     }
 }
 
-export async function deletePortfolioItem(id) {
-    try {
-        const res = await fetch(`${BASE_URL}/${id}`, { method: 'DELETE' });
-        if (!res.ok) throw new Error('Failed to delete item');
-        return true;
-    } catch (error) {
-        console.error(error);
-        return false;
-    }
-}

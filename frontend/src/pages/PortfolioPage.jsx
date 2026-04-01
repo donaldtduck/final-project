@@ -3,6 +3,7 @@ import PortfolioItem from '../components/PortfolioItem';
 import PortfolioSummary from '../components/PortfolioSummary';
 import Divider from '../components/Divider';
 import Navbar from '../components/Navbar';
+import { getPortfolio } from '../api/portfolio';
 
 // === Mock Data ===
 const mockPortfolio = [
@@ -20,8 +21,33 @@ export default function PortfolioPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        setPortfolio(mockPortfolio);
-        setLoading(false);
+        // setPortfolio(mockPortfolio);
+        // setLoading(false);
+        const fetchData = async () => {
+            setLoading(true);
+
+            const res = await getPortfolio();
+
+            console.log(res);
+            if (Array.isArray(res)) {
+                const mapped = res.map((item, index) => ({
+                    id: index + 1,
+                    symbol: item.symbol,
+                    name: item.symbol,
+                    volume: item.volume,
+                    purchasePrice: Number(item.purchasePrice).toFixed(2),
+                    currentPrice: Number(item.currentPrice).toFixed(2),
+                    prevClose: Number(item.currentPrice).toFixed(2),
+                }));
+
+                console.log(mapped);
+                setPortfolio(mapped);
+            }
+
+            setLoading(false);
+        };
+
+        fetchData();
     }, []);
 
     const summary = {
@@ -56,7 +82,10 @@ export default function PortfolioPage() {
 
     // 过滤 + 排序
     const filteredPortfolio = portfolio
-        .filter(item => item.symbol.toLowerCase().includes(search.toLowerCase()) || item.name.toLowerCase().includes(search.toLowerCase()))
+        .filter(item =>
+            item.symbol.toLowerCase().includes(search.toLowerCase()) ||
+            item.name.toLowerCase().includes(search.toLowerCase())
+        )
         .sort((a, b) => {
             let valA = a[sortKey];
             let valB = b[sortKey];
@@ -191,7 +220,7 @@ export default function PortfolioPage() {
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
                     {filteredPortfolio.map(item => (
-                        <PortfolioItem key={item.id} item={item} />
+                        item && <PortfolioItem key={item.id} item={item} />
                     ))}
                 </div>
             )}

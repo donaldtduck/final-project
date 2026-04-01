@@ -13,6 +13,8 @@ public class StockVo {
      */
     private String symbol;
 
+    private String name = "HAHA";
+
     /**
      * 成交量/持仓数量
      * 对应 UI Volume
@@ -42,5 +44,6 @@ public class StockVo {
      * 对应 UI Today P/L
      */
     private BigDecimal todayPnl;
+
 
 }
