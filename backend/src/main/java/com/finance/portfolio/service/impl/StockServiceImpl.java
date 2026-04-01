@@ -1,6 +1,5 @@
 package com.finance.portfolio.service.impl;
 
-import cn.hutool.core.annotation.Alias;
 import com.finance.portfolio.exception.BusinessException;
 import com.finance.portfolio.mapper.TransactionRecordMapper;
 import com.finance.portfolio.model.dto.AddStockDto;
@@ -10,8 +9,8 @@ import com.finance.portfolio.model.dto.StockQueryDto;
 import com.finance.portfolio.model.entity.TransactionRecord;
 import com.finance.portfolio.model.vo.MyStockPerformanceVo;
 import com.finance.portfolio.model.vo.StockVo;
+import com.finance.portfolio.service.MarketDataRouter;
 import com.finance.portfolio.service.StockService;
-import com.finance.portfolio.util.SinaStockApiUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,14 +22,19 @@ import java.util.stream.Collectors;
 @Service
 public class StockServiceImpl implements StockService {
 
+//    @Autowired
+//    SinaStockApiUtil sinaStockApiUtil;
     @Autowired
-    SinaStockApiUtil sinaStockApiUtil;
+    MarketDataRouter marketDataRouter;
     @Autowired
     TransactionRecordMapper transactionRecordMapper;
 
     @Override
     public void addStock(AddStockDto addStockDto) {
-        BigDecimal closePriceByDate = sinaStockApiUtil.getClosePriceByDate(addStockDto.getSymbol(), addStockDto.getDate());
+        BigDecimal closePriceByDate = marketDataRouter.route(
+                addStockDto.getSymbol()).getClosePriceByDate(addStockDto.getSymbol(), addStockDto.getDate()
+        );
+//        BigDecimal closePriceByDate = sinaStockApiUtil.getClosePriceByDate(addStockDto.getSymbol(), addStockDto.getDate());
 
         TransactionRecord transactionRecord = new TransactionRecord();
         transactionRecord.setSymbol(addStockDto.getSymbol());
@@ -93,8 +97,8 @@ public class StockServiceImpl implements StockService {
                     BigDecimal avgPrice = totalBuyCost.divide(totalBuyQuantity, 4, RoundingMode.HALF_UP);
 
                     // === 获取市场价格 ===
-                    BigDecimal currentPrice = sinaStockApiUtil.getCurrentPrice(symbol);
-                    BigDecimal lastClose = sinaStockApiUtil.getLastClosePrice(symbol);
+                    BigDecimal currentPrice = marketDataRouter.route(symbol).getCurrentPrice(symbol);
+                    BigDecimal lastClose = marketDataRouter.route(symbol).getLastClosePrice(symbol);
 
                     // === 封装 VO ===
                     StockVo vo = new StockVo();
@@ -182,8 +186,8 @@ public class StockServiceImpl implements StockService {
                     }
 
                     // === 当前价格 & 昨日收盘价 ===
-                    BigDecimal currentPrice = sinaStockApiUtil.getCurrentPrice(symbol);
-                    BigDecimal lastClose = sinaStockApiUtil.getLastClosePrice(symbol);
+                    BigDecimal currentPrice = marketDataRouter.route(symbol).getCurrentPrice(symbol);
+                    BigDecimal lastClose = marketDataRouter.route(symbol).getLastClosePrice(symbol);
 
                     // === 组装 VO ===
                     StockVo vo = new StockVo();
@@ -226,7 +230,8 @@ public class StockServiceImpl implements StockService {
             throw new BusinessException(400, "持仓数量不足，当前持仓：" + holdingQuantity + "股，尝试移除：" + removeQty + "股");
         }
         // 3. 获取操作日期的股票收盘价（与添加资产逻辑一致，保证价格准确性）
-        BigDecimal closePriceByDate = sinaStockApiUtil.getClosePriceByDate(removeStockDto.getSymbol(), removeStockDto.getDate());
+        BigDecimal closePriceByDate = marketDataRouter.route(removeStockDto.getSymbol()).
+                getClosePriceByDate(removeStockDto.getSymbol(), removeStockDto.getDate());
         if (closePriceByDate.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException(400, "获取股票价格失败，请检查代码或日期是否正确");
         }
@@ -247,7 +252,7 @@ public class StockServiceImpl implements StockService {
         StockQueryDto stockQuery = PerformanceQueryDto.toStockQuery(performanceQueryDto);
 
         myStockPerformanceVo.setSymbol(stockQuery.getSymbol());
-        myStockPerformanceVo.setStockHistoryVoList(sinaStockApiUtil.getStockHistory(stockQuery));
+        myStockPerformanceVo.setStockHistoryVoList(marketDataRouter.route(stockQuery.getSymbol()).getStockHistory(stockQuery));
         myStockPerformanceVo.setTransactionVoList(transactionRecordMapper.selectBySymbol(performanceQueryDto.getSymbol()));
         return myStockPerformanceVo;
     }

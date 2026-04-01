@@ -40,9 +40,8 @@ export async function addPortfolioItem(item) {
             body: JSON.stringify(item),
         });
 
-        if (!res.ok) {
-            const err = await res.text();
-            throw new Error(err || "Failed to add item");
+        if (res.status === 204 || res.headers.get('content-length') === '0') {
+            return {};
         }
 
         return await res.json();

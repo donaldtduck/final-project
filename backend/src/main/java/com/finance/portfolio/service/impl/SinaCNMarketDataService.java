@@ -1,12 +1,13 @@
-package com.finance.portfolio.util;
+package com.finance.portfolio.service.impl;
 
 import com.finance.portfolio.model.dto.StockQueryDto;
 import com.finance.portfolio.model.vo.StockHistoryVo;
+import com.finance.portfolio.service.MarketDataService;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -16,8 +17,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Component
-public class SinaStockApiUtil {
+@Service("sinaCNMarketDataService")
+public class SinaCNMarketDataService implements MarketDataService {
 
     private final RestTemplate restTemplate = new RestTemplate();
     private static final DateTimeFormatter DAY_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");

@@ -5,9 +5,9 @@ import com.finance.portfolio.model.entity.TransactionRecord;
 import com.finance.portfolio.model.vo.PortfolioChartVo;
 import com.finance.portfolio.model.vo.PortfolioOverviewVo;
 import com.finance.portfolio.model.vo.StockVo;
+import com.finance.portfolio.service.MarketDataRouter;
 import com.finance.portfolio.service.PortfolioService;
 import com.finance.portfolio.service.StockService;
-import com.finance.portfolio.util.SinaStockApiUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
@@ -24,8 +24,10 @@ public class PortfolioServiceImpl implements PortfolioService {
     StockService stockService;
     @Autowired
     TransactionRecordMapper transactionRecordMapper;
+//    @Autowired
+//    SinaStockApiUtil sinaStockApiUtil;
     @Autowired
-    SinaStockApiUtil sinaStockApiUtil;
+    MarketDataRouter marketDataRouter;
 
 
     // 汇率
@@ -206,7 +208,8 @@ public class PortfolioServiceImpl implements PortfolioService {
             StockPosition pos = entry.getValue();
 
             // 获取当天收盘价
-            BigDecimal close = sinaStockApiUtil.getClosePriceByDate(symbol, LocalDateTime.of(date, LocalDateTime.MIN.toLocalTime()));
+            BigDecimal close = marketDataRouter.route(symbol).
+                    getClosePriceByDate(symbol, LocalDateTime.of(date, LocalDateTime.MIN.toLocalTime()));
             BigDecimal rate = getRate(symbol);
             BigDecimal usdValue = close.multiply(rate).multiply(pos.totalQuantity);
             total = total.add(usdValue);

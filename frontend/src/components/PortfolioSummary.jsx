@@ -90,18 +90,24 @@ export default function PortfolioSummary() {
         }
     };
 
+    // ————————————————————————————————————————
+    // 完全按照你 Java 代码的逻辑
+    // ————————————————————————————————————————
+    const getRate = (symbol) => {
+        const s = symbol.toLowerCase();
+        if (s.startsWith('sh') || s.startsWith('sz')) return 0.14;    // CNY
+        if (s.startsWith('hk')) return 0.128;                        // HKD
+        return 1.0;                                                  // USD
+    };
+
     useEffect(() => {
         const load = async () => {
-            // 1. 加载总览
             const overview = await getPortfolioOverview();
-            // 2. 加载图表
             const chart = await getPortfolioChart();
-            // 3. 加载持仓列表（用来生成饼图）
             const holdings = await getPortfolio();
 
             setSummary(overview);
 
-            // 图表数据格式化
             const formatted = chart?.navList?.map((nav, i) => ({
                 date: nav.date,
                 value: nav.totalNav,
@@ -109,15 +115,21 @@ export default function PortfolioSummary() {
             })) || [];
             setChartData(formatted);
 
-            // ======================
-            // 🔥 饼图数据自动生成
-            // ======================
-            const pie = holdings.map(item => ({
-                name: item.symbol,
-                value: item.currentPrice * item.volume
-            }));
-            setPieData(pie);
+            // ————————————————————————————————————————
+            // 🔥 饼图：全部换算成美元再渲染
+            // ————————————————————————————————————————
+            const pie = holdings.map(item => {
+                const totalValue = item.currentPrice * item.volume;
+                const rate = getRate(item.symbol);
+                const usdValue = totalValue * rate;
 
+                return {
+                    name: item.symbol,
+                    value: usdValue, // 饼图用美元
+                };
+            });
+
+            setPieData(pie);
             setLoading(false);
         };
         load();
@@ -210,7 +222,7 @@ export default function PortfolioSummary() {
                     </ResponsiveContainer>
                 </div>
 
-                {/* 🔥 修复后的饼图 */}
+                {/* 🔥 饼图：全部按美元计算 */}
                 <div className="pie-chart-wrapper">
                     <h3>Portfolio Share</h3>
                     <PieChart width={250} height={250}>
@@ -221,13 +233,29 @@ export default function PortfolioSummary() {
                             cx="50%"
                             cy="50%"
                             outerRadius={100}
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            innerRadius={50}
+                            labelLine={false}
+                            labelPosition="inside"
+                            label={({ percent }) => (
+                                <tspan fill="white" fontSize="13" fontWeight="bold">
+                                    {(percent * 100).toFixed(0)}%
+                                </tspan>
+                            )}
                         >
-                            {pieData.map((_, index) => (
+                            {pieData.map((entry, index) => (
                                 <Cell key={index} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Pie>
-                        <Tooltip contentStyle={{ backgroundColor: '#222', color: '#fff' }} />
+
+                        <Tooltip
+                            contentStyle={{ backgroundColor: '#222', border: 'none', color: '#fff' }}
+                            formatter={(value, _name, props) => {
+                                const total = pieData.reduce((sum, item) => sum + item.value, 0);
+                                const pct = ((value / total) * 100).toFixed(0);
+                                const symbol = props.payload.name;
+                                return [`$${value.toFixed(2)} | ${pct}% `, `${symbol}`];
+                            }}
+                        />
                         <Legend wrapperStyle={{ color: '#fff', fontSize: '0.8rem' }} />
                     </PieChart>
                 </div>
