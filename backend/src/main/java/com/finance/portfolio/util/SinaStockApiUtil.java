@@ -83,6 +83,7 @@ public class SinaStockApiUtil {
         return BigDecimal.ZERO;
     }
 
+
     // ---------------- 我给你补的：获取当前价格（最新收盘价） ----------------
     public BigDecimal getCurrentPrice(String symbol) {
         String url = "https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData"
