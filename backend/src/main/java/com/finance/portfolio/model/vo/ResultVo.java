@@ -1,39 +1,3 @@
-//package com.finance.portfolio.model.vo;
-//
-//import lombok.Data;
-//
-///**
-// * 统一API返回格式，适配前端接收逻辑
-// */
-//@Data
-//public class ResultVo<T> {
-//    private int code;       // 响应码：200成功，400参数错误，500系统错误
-//    private String msg;     // 响应信息
-//    private T data;         // 响应数据
-//
-//    // 成功响应（带数据）
-//    public static <T> ResultVo<T> success(T data) {
-//        ResultVo<T> result = new ResultVo<>();
-//        result.setCode(200);
-//        result.setMsg("操作成功");
-//        result.setData(data);
-//        return result;
-//    }
-//
-//    // 成功响应（无数据）
-//    public static <T> ResultVo<T> success() {
-//        return success(null);
-//    }
-//
-//    // 错误响应
-//    public static <T> ResultVo<T> error(int code, String msg) {
-//        ResultVo<T> result = new ResultVo<>();
-//        result.setCode(code);
-//        result.setMsg(msg);
-//        result.setData(null);
-//        return result;
-//    }
-//}
 
 package com.finance.portfolio.model.vo;
 
@@ -68,7 +32,7 @@ public class ResultVo<T> {
         return success(null);
     }
 
-    // ✅ 修复1：增加 3个参数的 error 方法（包含 data）
+    //  修复1：增加 3个参数的 error 方法（包含 data）
     public static <T> ResultVo<T> error(int code, String msg, T data) {
         ResultVo<T> result = new ResultVo<>();
         result.setCode(code);

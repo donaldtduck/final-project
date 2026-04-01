@@ -83,10 +83,49 @@ public class SinaStockApiUtil {
         return BigDecimal.ZERO;
     }
 
-    /**
-     * 提供RestTemplate实例给外部使用（获取股票名称时调用）
-     */
-    public RestTemplate getRestTemplate() {
-        return this.restTemplate;
+
+    // ---------------- 我给你补的：获取当前价格（最新收盘价） ----------------
+    public BigDecimal getCurrentPrice(String symbol) {
+        String url = "https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData"
+                + "?symbol=" + symbol
+                + "&scale=240"
+                + "&ma=no"
+                + "&datalen=1"; // 只取最新一条数据
+
+        try {
+            List<Map<String, String>> rawList = restTemplate.getForObject(url, List.class);
+            if (rawList == null || rawList.isEmpty()) {
+                return BigDecimal.ZERO;
+            }
+
+            // 取第一条 = 最新价格
+            Map<String, String> latest = rawList.get(0);
+            return new BigDecimal(latest.get("close"));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return BigDecimal.ZERO;
+    }
+
+    // ---------------- 额外补：获取昨日收盘价（你计算 todayPnl 必须用到！） ----------------
+    public BigDecimal getLastClosePrice(String symbol) {
+        String url = "https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData"
+                + "?symbol=" + symbol
+                + "&scale=240"
+                + "&ma=no"
+                + "&datalen=2"; // 取最近2条
+
+        try {
+            List<Map<String, String>> rawList = restTemplate.getForObject(url, List.class);
+            if (rawList == null || rawList.size() < 2) {
+                return BigDecimal.ZERO;
+            }
+            // 第二条 = 昨日收盘价
+            return new BigDecimal(rawList.get(1).get("close"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return BigDecimal.ZERO;
     }
 }
