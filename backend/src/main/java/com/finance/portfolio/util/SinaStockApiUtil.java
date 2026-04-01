@@ -82,4 +82,11 @@ public class SinaStockApiUtil {
 
         return BigDecimal.ZERO;
     }
+
+    /**
+     * 提供RestTemplate实例给外部使用（获取股票名称时调用）
+     */
+    public RestTemplate getRestTemplate() {
+        return this.restTemplate;
+    }
 }

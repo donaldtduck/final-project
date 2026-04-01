@@ -54,6 +54,12 @@
             <version>5.8.31</version>
         </dependency>
 
+        <!-- 参数校验依赖（解决 @Valid 报错） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
         <!-- 测试 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
