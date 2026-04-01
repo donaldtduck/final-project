@@ -220,7 +220,7 @@ export default function PortfolioPage() {
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
                     {filteredPortfolio.map(item => (
-                        <PortfolioItem key={item.id} item={item} />
+                        item && <PortfolioItem key={item.id} item={item} />
                     ))}
                 </div>
             )}

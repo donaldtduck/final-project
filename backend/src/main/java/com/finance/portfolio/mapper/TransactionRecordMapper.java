@@ -19,6 +19,9 @@ public interface TransactionRecordMapper {
     @Select("SELECT SUM(quantity) FROM transaction_record WHERE symbol = #{symbol}")
     Double getHoldingQuantity(String symbol);
 
+    @Select("SELECT * FROM transaction_record WHERE symbol = #{symbol} ORDER BY date DESC")
+    List<TransactionRecord> selectBySymbol(String symbol);
+
     // 获取所有交易流水
     @Select("SELECT * FROM transaction_record ORDER BY date DESC")
     List<TransactionRecord> findAll();

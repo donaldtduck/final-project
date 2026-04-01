@@ -2,34 +2,83 @@ import { useState, useEffect, useRef } from 'react';
 import './PortfolioItem.css';
 import { getStockPerformance } from '../api/portfolio';
 
+// ✅ 移除股票接口
+export async function removeStock(dto) {
+    try {
+        const res = await fetch('http://localhost:8080/api/stock/remove', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dto),
+        });
+
+        if (!res.ok) throw new Error('Remove failed');
+        return await res.text();
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
+}
+
 export default function PortfolioItem({ item }) {
     const chartRef = useRef(null);
-
-    // ✅ 每个卡片自己控制展开！独立！互不影响！
     const [expanded, setExpanded] = useState(false);
-
     const [unit, setUnit] = useState('DAY');
     const [slice, setSlice] = useState(30);
+
+    // Remove form
+    const [quantity, setQuantity] = useState('');
+    const [date, setDate] = useState('');
+    const [msg, setMsg] = useState('');
 
     const unrealizedPL = (item.currentPrice - item.purchasePrice) * item.volume;
     const todayPL = (item.currentPrice - (item.prevClose || item.currentPrice)) * item.volume;
     const plColor = (value) => (value >= 0 ? 'green' : 'red');
 
-    // ✅ 自己点击自己展开，不影响别人
     const handleToggle = (e) => {
         e.stopPropagation();
         setExpanded(!expanded);
     };
 
-    useEffect(() => {
-        // ✅ 只有自己展开时，才画图！
-        if (!expanded || !chartRef.current) return;
+    const stop = (e) => e.stopPropagation();
 
+    // ✅ 提交移除 + 成功后刷新页面
+    const handleSubmitRemove = async (e) => {
+        e.stopPropagation();
+        if (!quantity || !date) {
+            setMsg('Please fill all fields');
+            return;
+        }
+        const qty = Number(quantity);
+        if (qty <= 0 || qty > item.volume) {
+            setMsg('Quantity must be between 0 and ' + item.volume);
+            return;
+        }
+
+        const dto = {
+            symbol: item.symbol,
+            date: date,
+            quantity: qty,
+        };
+
+        const result = await removeStock(dto);
+        if (result) {
+            setMsg('Success!');
+            setQuantity('');
+            setDate('');
+
+            // ✅ 操作完成后刷新页面，更新持仓
+            setTimeout(() => window.location.reload(), 800);
+        } else {
+            setMsg('Failed');
+        }
+    };
+
+    useEffect(() => {
+        if (!expanded || !chartRef.current) return;
         const load = async () => {
             try {
                 const data = await getStockPerformance(item.symbol, slice, unit);
                 if (!data) return;
-
                 const canvas = chartRef.current;
                 const ctx = canvas.getContext('2d');
                 const width = canvas.width;
@@ -58,7 +107,6 @@ export default function PortfolioItem({ item }) {
                 const x = (i) => padding + i * gap + gap / 2;
                 const y = (p) => height - padding - (p - minP) / priceRange * plotH;
 
-                // Grid
                 ctx.strokeStyle = 'rgba(255, 105, 180, 0.25)';
                 ctx.lineWidth = 1;
                 for (let i = 0; i <= 5; i++) {
@@ -76,7 +124,6 @@ export default function PortfolioItem({ item }) {
                     ctx.stroke();
                 });
 
-                // Axis
                 ctx.strokeStyle = '#ff69b4';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
@@ -85,7 +132,6 @@ export default function PortfolioItem({ item }) {
                 ctx.lineTo(width - padding, height - padding);
                 ctx.stroke();
 
-                // Candlesticks
                 k.forEach((h, i) => {
                     const cx = x(i);
                     const oy = y(h.open);
@@ -106,7 +152,6 @@ export default function PortfolioItem({ item }) {
                     ctx.fillRect(cx - barW / 2, top, barW, hh);
                 });
 
-                // Trade Markers + Vertical Dashed Lines
                 trans.forEach((t) => {
                     const day = t.date.split('T')[0];
                     let idx = k.findIndex(item => item.day === day);
@@ -120,7 +165,6 @@ export default function PortfolioItem({ item }) {
                             }
                         }
                     }
-
                     if (idx === -1) return;
 
                     const cx = x(idx);
@@ -144,7 +188,6 @@ export default function PortfolioItem({ item }) {
                     ctx.stroke();
                 });
 
-                // Axis Labels
                 ctx.fillStyle = '#ff69b4';
                 ctx.font = '11px sans-serif';
                 ctx.textAlign = 'center';
@@ -159,12 +202,10 @@ export default function PortfolioItem({ item }) {
                 console.error('Chart error', err);
             }
         };
-
         load();
     }, [expanded, item.symbol, slice, unit]);
 
     return (
-        // ✅ 使用自己的 handleToggle，完全独立！
         <div className="portfolio-card" onClick={handleToggle} style={{ cursor: 'pointer' }}>
             <div className="portfolio-header">
                 <span className="ticker">{item.symbol}</span>
@@ -199,16 +240,16 @@ export default function PortfolioItem({ item }) {
             </div>
 
             {expanded && (
-                <div style={{ marginTop: '1rem', position: 'relative' }}>
+                <div onClick={stop} style={{ marginTop: '1rem' }}>
+
+                    {/* ========== ✅ Chart ========== */}
                     <div style={{
                         display: 'flex', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap'
                     }}>
                         <select
                             value={unit}
-                            onChange={(e) => {
-                                e.stopPropagation();
-                                setUnit(e.target.value);
-                            }}
+                            onClick={stop}
+                            onChange={(e) => { stop(e); setUnit(e.target.value); }}
                             style={{
                                 padding: '6px 12px', backgroundColor: '#222', color: '#fff',
                                 border: '1px solid #ff69b4', borderRadius: '8px', outline: 'none'
@@ -221,10 +262,8 @@ export default function PortfolioItem({ item }) {
 
                         <select
                             value={slice}
-                            onChange={(e) => {
-                                e.stopPropagation();
-                                setSlice(Number(e.target.value));
-                            }}
+                            onClick={stop}
+                            onChange={(e) => { stop(e); setSlice(Number(e.target.value)); }}
                             style={{
                                 padding: '6px 12px', backgroundColor: '#222', color: '#fff',
                                 border: '1px solid #ff69b4', borderRadius: '8px', outline: 'none'
@@ -242,11 +281,92 @@ export default function PortfolioItem({ item }) {
                         ref={chartRef}
                         width={600}
                         height={280}
+                        onClick={stop}
                         style={{
                             width: '100%', height: '280px', borderRadius: '10px',
                             backgroundColor: '#1b001b', display: 'block'
                         }}
                     />
+
+                    {/* ========== ✅ Remove Stock Form 已移到图表下方 ========== */}
+                    <div style={{
+                        background: '#222',
+                        borderRadius: '10px',
+                        padding: '12px 14px',
+                        marginTop: '1rem',
+                        border: '1px solid #ff69b4'
+                    }}>
+                        <div style={{ fontSize: '14px', color: '#fff', marginBottom: '10px' }}>
+                            Remove Stock
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.6rem', marginBottom: '0.6rem' }}>
+                            <input
+                                type="number"
+                                placeholder="Quantity"
+                                value={quantity}
+                                onClick={stop}
+                                onChange={(e) => {
+                                    stop(e);
+                                    setQuantity(e.target.value);
+                                }}
+                                style={{
+                                    flex: 1,
+                                    padding: '6px 10px',
+                                    backgroundColor: '#111',
+                                    color: '#fff',
+                                    border: '1px solid #ff69b4',
+                                    borderRadius: '8px',
+                                    outline: 'none'
+                                }}
+                            />
+
+                            <input
+                                type="datetime-local"
+                                value={date}
+                                onClick={stop}
+                                onChange={(e) => {
+                                    stop(e);
+                                    setDate(e.target.value);
+                                }}
+                                style={{
+                                    flex: 1,
+                                    padding: '6px 10px',
+                                    backgroundColor: '#111',
+                                    color: '#fff',
+                                    border: '1px solid #ff69b4',
+                                    borderRadius: '8px',
+                                    outline: 'none'
+                                }}
+                            />
+                        </div>
+
+                        <button
+                            onClick={handleSubmitRemove}
+                            style={{
+                                width: '100%',
+                                padding: '8px',
+                                backgroundColor: '#ff4444',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '8px',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Confirm Remove
+                        </button>
+
+                        {msg && (
+                            <div style={{
+                                marginTop: '8px',
+                                fontSize: '12px',
+                                color: msg.includes('Success') ? '#0f0' : '#f33'
+                            }}>
+                                {msg}
+                            </div>
+                        )}
+                    </div>
+
                 </div>
             )}
         </div>

@@ -4,8 +4,11 @@ import cn.hutool.core.annotation.Alias;
 import com.finance.portfolio.exception.BusinessException;
 import com.finance.portfolio.mapper.TransactionRecordMapper;
 import com.finance.portfolio.model.dto.AddStockDto;
+import com.finance.portfolio.model.dto.PerformanceQueryDto;
 import com.finance.portfolio.model.dto.RemoveStockDto;
+import com.finance.portfolio.model.dto.StockQueryDto;
 import com.finance.portfolio.model.entity.TransactionRecord;
+import com.finance.portfolio.model.vo.MyStockPerformanceVo;
 import com.finance.portfolio.model.vo.StockVo;
 import com.finance.portfolio.service.StockService;
 import com.finance.portfolio.util.SinaStockApiUtil;
@@ -212,5 +215,17 @@ public class StockServiceImpl implements StockService {
         transactionRecord.setPrice(closePriceByDate.doubleValue());
         // 5. 存入数据库
         transactionRecordMapper.insertRecord(transactionRecord);
+    }
+
+    @Override
+    public MyStockPerformanceVo getMyStockPerformance(PerformanceQueryDto performanceQueryDto) {
+        // create vo and set attrs
+        MyStockPerformanceVo myStockPerformanceVo = new MyStockPerformanceVo();
+        StockQueryDto stockQuery = PerformanceQueryDto.toStockQuery(performanceQueryDto);
+
+        myStockPerformanceVo.setSymbol(stockQuery.getSymbol());
+        myStockPerformanceVo.setStockHistoryVoList(sinaStockApiUtil.getStockHistory(stockQuery));
+        myStockPerformanceVo.setTransactionVoList(transactionRecordMapper.selectBySymbol(performanceQueryDto.getSymbol()));
+        return myStockPerformanceVo;
     }
 }
