@@ -3,20 +3,26 @@ import './PortfolioItem.css';
 import { getStockPerformance } from '../api/portfolio';
 
 export default function PortfolioItem({ item }) {
-    const [expanded, setExpanded] = useState(false);
     const chartRef = useRef(null);
+
+    // ✅ 每个卡片自己控制展开！独立！互不影响！
+    const [expanded, setExpanded] = useState(false);
 
     const [unit, setUnit] = useState('DAY');
     const [slice, setSlice] = useState(30);
-    const [tooltip, setTooltip] = useState(null); // 悬浮提示
 
     const unrealizedPL = (item.currentPrice - item.purchasePrice) * item.volume;
     const todayPL = (item.currentPrice - (item.prevClose || item.currentPrice)) * item.volume;
     const plColor = (value) => (value >= 0 ? 'green' : 'red');
 
-    const toggleExpand = () => setExpanded(!expanded);
+    // ✅ 自己点击自己展开，不影响别人
+    const handleToggle = (e) => {
+        e.stopPropagation();
+        setExpanded(!expanded);
+    };
 
     useEffect(() => {
+        // ✅ 只有自己展开时，才画图！
         if (!expanded || !chartRef.current) return;
 
         const load = async () => {
@@ -52,7 +58,7 @@ export default function PortfolioItem({ item }) {
                 const x = (i) => padding + i * gap + gap / 2;
                 const y = (p) => height - padding - (p - minP) / priceRange * plotH;
 
-                // 网格
+                // Grid
                 ctx.strokeStyle = 'rgba(255, 105, 180, 0.25)';
                 ctx.lineWidth = 1;
                 for (let i = 0; i <= 5; i++) {
@@ -70,7 +76,7 @@ export default function PortfolioItem({ item }) {
                     ctx.stroke();
                 });
 
-                // 坐标轴
+                // Axis
                 ctx.strokeStyle = '#ff69b4';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
@@ -79,7 +85,7 @@ export default function PortfolioItem({ item }) {
                 ctx.lineTo(width - padding, height - padding);
                 ctx.stroke();
 
-                // K线
+                // Candlesticks
                 k.forEach((h, i) => {
                     const cx = x(i);
                     const oy = y(h.open);
@@ -100,19 +106,11 @@ export default function PortfolioItem({ item }) {
                     ctx.fillRect(cx - barW / 2, top, barW, hh);
                 });
 
-                // ======================
-                // 买卖点 + 垂直虚线
-                // ======================
-                // ======================
-                // 买卖点 + 垂直虚线
-                // ======================
-                const tradePoints = [];
-
+                // Trade Markers + Vertical Dashed Lines
                 trans.forEach((t) => {
                     const day = t.date.split('T')[0];
                     let idx = k.findIndex(item => item.day === day);
 
-                    // 只有周线/月线匹配不到时，才找最近K线
                     if (idx === -1 && (unit === 'WEEK' || unit === 'MONTH')) {
                         for (let i = 0; i < k.length; i++) {
                             if (k[i].day <= day) {
@@ -144,40 +142,9 @@ export default function PortfolioItem({ item }) {
                     ctx.fill();
                     ctx.strokeStyle = '#fff';
                     ctx.stroke();
-
-                    tradePoints.push({ cx, cy, r: 12, t, day, isBuy });
                 });
 
-                // 👇 👇 👇 【关键：把鼠标事件写到这里，百分百能触发！】
-                chartRef.current.onmousemove = (e) => {
-                    const rect = chartRef.current.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-
-                    for (const p of tradePoints) {
-                        const d = Math.hypot(x - p.cx, y - p.cy);
-                        if (d < p.r) {
-                            setTooltip({
-                                x: e.clientX,
-                                y: e.clientY,
-                                content: (
-                                    <div style={{ color: '#fff', fontSize: 13, lineHeight: 1.5 }}>
-                                        <div>{p.isBuy ? '📈 买入' : '📉 卖出'}</div>
-                                        <div>价格：{p.t.price.toFixed(2)}</div>
-                                        <div>数量：{Math.abs(p.t.quantity).toFixed(2)}</div>
-                                        <div>日期：{p.day}</div>
-                                    </div>
-                                )
-                            });
-                            return;
-                        }
-                    }
-                    setTooltip(null);
-                };
-
-                chartRef.current.onmouseleave = () => setTooltip(null);
-
-                // 轴文字
+                // Axis Labels
                 ctx.fillStyle = '#ff69b4';
                 ctx.font = '11px sans-serif';
                 ctx.textAlign = 'center';
@@ -189,7 +156,7 @@ export default function PortfolioItem({ item }) {
                 ctx.fillText(maxP.toFixed(2), 6, padding + 10);
 
             } catch (err) {
-                console.error('图表错误', err);
+                console.error('Chart error', err);
             }
         };
 
@@ -197,7 +164,8 @@ export default function PortfolioItem({ item }) {
     }, [expanded, item.symbol, slice, unit]);
 
     return (
-        <div className="portfolio-card" onClick={toggleExpand} style={{ cursor: 'pointer' }}>
+        // ✅ 使用自己的 handleToggle，完全独立！
+        <div className="portfolio-card" onClick={handleToggle} style={{ cursor: 'pointer' }}>
             <div className="portfolio-header">
                 <span className="ticker">{item.symbol}</span>
                 <span className="type">Stock</span>
@@ -209,11 +177,11 @@ export default function PortfolioItem({ item }) {
                     <div className="value">{item.volume}</div>
                 </div>
                 <div className="detail">
-                    <div className="label">Purchase Price</div>
+                    <div className="label">Avg Price</div>
                     <div className="value">{Number(item.purchasePrice).toFixed(2)}</div>
                 </div>
                 <div className="detail">
-                    <div className="label">Current Price</div>
+                    <div className="label">Current</div>
                     <div className="value">{Number(item.currentPrice).toFixed(2)}</div>
                 </div>
                 <div className="detail">
@@ -237,32 +205,36 @@ export default function PortfolioItem({ item }) {
                     }}>
                         <select
                             value={unit}
-                            onChange={(e) => setUnit(e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                                e.stopPropagation();
+                                setUnit(e.target.value);
+                            }}
                             style={{
                                 padding: '6px 12px', backgroundColor: '#222', color: '#fff',
                                 border: '1px solid #ff69b4', borderRadius: '8px', outline: 'none'
                             }}
                         >
-                            <option value="DAY">日线 DAY</option>
-                            <option value="WEEK">周线 WEEK</option>
-                            <option value="MONTH">月线 MONTH</option>
+                            <option value="DAY">Daily</option>
+                            <option value="WEEK">Weekly</option>
+                            <option value="MONTH">Monthly</option>
                         </select>
 
                         <select
                             value={slice}
-                            onChange={(e) => setSlice(Number(e.target.value))}
-                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                                e.stopPropagation();
+                                setSlice(Number(e.target.value));
+                            }}
                             style={{
                                 padding: '6px 12px', backgroundColor: '#222', color: '#fff',
                                 border: '1px solid #ff69b4', borderRadius: '8px', outline: 'none'
                             }}
                         >
-                            <option value={10}>10 周期</option>
-                            <option value={30}>30 周期</option>
-                            <option value={60}>60 周期</option>
-                            <option value={90}>90 周期</option>
-                            <option value={120}>120 周期</option>
+                            <option value={10}>10 Periods</option>
+                            <option value={30}>30 Periods</option>
+                            <option value={60}>60 Periods</option>
+                            <option value={90}>90 Periods</option>
+                            <option value={120}>120 Periods</option>
                         </select>
                     </div>
 
@@ -275,25 +247,6 @@ export default function PortfolioItem({ item }) {
                             backgroundColor: '#1b001b', display: 'block'
                         }}
                     />
-
-                    {/* 悬浮提示框 —— 绝对能看见 */}
-                    {tooltip && (
-                        <div
-                            style={{
-                                position: 'fixed',
-                                left: tooltip.x + 10,
-                                top: tooltip.y + 10,
-                                background: '#111',
-                                border: '1px solid #ff69b4',
-                                borderRadius: 8,
-                                padding: '8px 12px',
-                                zIndex: 999999,
-                                pointerEvents: 'none',
-                            }}
-                        >
-                            {tooltip.content}
-                        </div>
-                    )}
                 </div>
             )}
         </div>
