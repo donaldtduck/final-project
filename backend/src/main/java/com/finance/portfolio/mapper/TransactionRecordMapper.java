@@ -22,4 +22,23 @@ public interface TransactionRecordMapper {
     // 获取所有交易流水
     @Select("SELECT * FROM transaction_record ORDER BY date DESC")
     List<TransactionRecord> findAll();
+
+
+    /**
+     * 查询 所有有持仓的股票（持仓数量 > 0）
+     * 按股票分组，汇总持仓数量 + 取最新一次的买入价作为成本价
+     */
+    @Select("SELECT " +
+            "symbol, " +
+            "SUM(quantity) AS quantity, " +
+            // 取最新一笔交易的价格作为持仓成本价
+            "(SELECT price FROM transaction_record t2 " +
+            " WHERE t2.symbol = t1.symbol ORDER BY date DESC LIMIT 1) AS price, " +
+            // 取最新日期（非必须，兼容实体类）
+            "MAX(date) AS date " +
+            "FROM transaction_record t1 " +
+            "GROUP BY symbol " +
+            "HAVING SUM(quantity) > 0 " +
+            "ORDER BY symbol")
+    List<TransactionRecord> selectAllHoldStock();
 }
