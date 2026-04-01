@@ -45,7 +45,7 @@ public class StockController {
     }
 
     // ====== 新增：用户故事4 - 移除资产接口 ======
-    @PutMapping("/removings")
+    @PutMapping("/remove")
     public ResponseEntity<String> removeStock(@Valid @RequestBody RemoveStockDto removeStockDto) {
         stockService.removeStock(removeStockDto);
         return ResponseEntity.ok("资产移除成功"); // 直接返回ok，符合需求

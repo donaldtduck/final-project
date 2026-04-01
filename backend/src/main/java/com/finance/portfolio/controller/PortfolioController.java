@@ -1,5 +1,6 @@
 package com.finance.portfolio.controller;
 
+import com.finance.portfolio.model.vo.PortfolioChartVo;
 import com.finance.portfolio.model.vo.PortfolioOverviewVo;
 import com.finance.portfolio.service.PortfolioService;
 import lombok.RequiredArgsConstructor;
@@ -21,5 +22,10 @@ public class PortfolioController {
     @GetMapping("/overview")
     public PortfolioOverviewVo getOverview() {
         return portfolioService.getOverview();
+    }
+
+    @GetMapping("/chart")
+    public PortfolioChartVo getPortfolioChart() {
+        return portfolioService.getPortfolioChart();
     }
 }
