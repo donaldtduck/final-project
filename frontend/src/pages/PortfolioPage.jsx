@@ -20,8 +20,32 @@ export default function PortfolioPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        setPortfolio(mockPortfolio);
-        setLoading(false);
+        // setPortfolio(mockPortfolio);
+        // setLoading(false);
+        const fetchData = async () => {
+            setLoading(true);
+
+            const res = await getPortfolio();
+
+            if (res && res.data) {
+                // 🔥 后端返回的是 StockVo，要适配前端字段
+                const mapped = res.data.map((item, index) => ({
+                    id: index + 1,
+                    symbol: item.symbol,
+                    name: item.symbol, // 暂时用 symbol 代替 name
+                    volume: item.volume,
+                    purchasePrice: Number(item.purchasePrice),
+                    currentPrice: Number(item.currentPrice),
+                    prevClose: Number(item.currentPrice), // 临时用 currentPrice
+                }));
+
+                setPortfolio(mapped);
+            }
+
+            setLoading(false);
+        };
+
+        fetchData();
     }, []);
 
     const summary = {
