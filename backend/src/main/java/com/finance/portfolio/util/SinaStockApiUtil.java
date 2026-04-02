@@ -86,22 +86,23 @@ public class SinaStockApiUtil {
 
     // ---------------- 我给你补的：获取当前价格（最新收盘价） ----------------
     public BigDecimal getCurrentPrice(String symbol) {
-        String url = "https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData"
-                + "?symbol=" + symbol
-                + "&scale=240"
-                + "&ma=no"
-                + "&datalen=1"; // 只取最新一条数据
+        // 转成新浪小写规则  sh600000
+        String lowerSymbol = symbol.toLowerCase();
+
+        // 新浪实时行情接口（真正盘中价格）
+        String url = "https://hq.sinajs.cn/list=" + lowerSymbol;
 
         try {
-            List<Map<String, String>> rawList = restTemplate.getForObject(url, List.class);
-            if (rawList == null || rawList.isEmpty()) {
+            String response = restTemplate.getForObject(url, String.class);
+            if (response == null || !response.contains(",")) {
                 return BigDecimal.ZERO;
             }
 
-            // 取第一条 = 最新价格
-            Map<String, String> latest = rawList.get(0);
-            return new BigDecimal(latest.get("close"));
-
+            // 解析新浪股票行情字符串
+            // 例如：var hq_str_sh600000="浦发银行,10.58,10.32,10.56,...
+            String[] arr = response.split(",");
+            // 当前价格 在第4个字段（索引3）
+            return new BigDecimal(arr[3]);
         } catch (Exception e) {
             e.printStackTrace();
         }
