@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { addPortfolioItem } from '../api/portfolio';
 
 export default function AddStockModal({ onClose, onSuccess }) {
@@ -7,6 +7,21 @@ export default function AddStockModal({ onClose, onSuccess }) {
     const [quantity, setQuantity] = useState('');
     const [date, setDate] = useState('');
 
+    // —————————————————— 🔥 自动识别货币符号 ——————————————————
+    const getCurrencySymbol = () => {
+        const s = symbol.trim().toLowerCase();
+        if (s.startsWith("sh") || s.startsWith("sz")) {
+            return "¥";      // A股
+        } else if (s.startsWith("hk") || s.match(/^\d{5}$/) || s.startsWith("0")) {
+            return "HK$";    // 港股
+        } else {
+            return "$";      // 美股
+        }
+    };
+
+    const currency = getCurrencySymbol();
+
+    // —————————————————— 提交逻辑 ——————————————————
     const handleSubmit = async () => {
         if (!symbol) return alert('Symbol required');
         if (!totalPrice && !quantity) {
@@ -22,8 +37,6 @@ export default function AddStockModal({ onClose, onSuccess }) {
 
         try {
             await addPortfolioItem(dto);
-
-            // ✅ 成功后：刷新并关闭
             onSuccess();
             onClose();
             window.location.reload();
@@ -38,25 +51,53 @@ export default function AddStockModal({ onClose, onSuccess }) {
             <div style={modalStyle}>
                 <h2 style={titleStyle}>Add Stock</h2>
 
+                {/* Symbol */}
                 <input
-                    placeholder="Symbol (e.g. AAPL)"
+                    placeholder="Symbol (e.g. AAPL, SH600000)"
                     value={symbol}
                     onChange={e => setSymbol(e.target.value.toUpperCase())}
                     style={inputStyle}
                 />
 
+                {/* 二选一区域 */}
                 <div style={{ display: 'flex', gap: '1rem' }}>
-                    <input
-                        placeholder="Total Price"
-                        value={totalPrice}
-                        disabled={!!quantity}
-                        onChange={e => {
-                            setTotalPrice(e.target.value);
-                            if (e.target.value) setQuantity('');
-                        }}
-                        style={{ ...inputStyle, opacity: quantity ? 0.5 : 1 }}
-                    />
+                    {/* —————— 🔥 左边：货币符号 + Total Price —————— */}
+                    <div style={{
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        position: 'relative'
+                    }}>
+                        {/* 货币符号固定在左侧 */}
+                        <span style={{
+                            position: 'absolute',
+                            left: '12px',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            color: '#ffc0f5',
+                            fontSize: '0.95rem',
+                            pointerEvents: 'none'
+                        }}>
+                            {currency}
+                        </span>
 
+                        <input
+                            placeholder="Total Price"
+                            value={totalPrice}
+                            disabled={!!quantity}
+                            onChange={e => {
+                                setTotalPrice(e.target.value);
+                                if (e.target.value) setQuantity('');
+                            }}
+                            style={{
+                                ...inputStyle,
+                                paddingLeft: '32px', // 给符号留位置
+                                opacity: quantity ? 0.5 : 1
+                            }}
+                        />
+                    </div>
+
+                    {/* Quantity */}
                     <input
                         placeholder="Quantity"
                         value={quantity}
@@ -65,10 +106,14 @@ export default function AddStockModal({ onClose, onSuccess }) {
                             setQuantity(e.target.value);
                             if (e.target.value) setTotalPrice('');
                         }}
-                        style={{ ...inputStyle, opacity: totalPrice ? 0.5 : 1 }}
+                        style={{
+                            ...inputStyle,
+                            opacity: totalPrice ? 0.5 : 1
+                        }}
                     />
                 </div>
 
+                {/* Date */}
                 <input
                     type="datetime-local"
                     value={date}
@@ -76,6 +121,7 @@ export default function AddStockModal({ onClose, onSuccess }) {
                     style={inputStyle}
                 />
 
+                {/* Buttons */}
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                     <button style={btnPrimary} onClick={handleSubmit}>
                         Submit
@@ -89,6 +135,7 @@ export default function AddStockModal({ onClose, onSuccess }) {
     );
 }
 
+/* ===== 样式 完全不变 ===== */
 const overlayStyle = {
     position: 'fixed',
     inset: 0,

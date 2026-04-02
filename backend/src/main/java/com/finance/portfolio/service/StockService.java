@@ -58,4 +58,7 @@ public interface StockService {
      * 根据ID查询股票
      */
     Stock getStockById(Long id);
+
+    void addWatchStock(String symbol);
+    void removeWatchStock(String symbol);
 }

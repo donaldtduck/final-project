@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { getStockPerformance } from '../api/portfolio';
+import { getStockPerformance, unsubscribeStock } from '../api/portfolio';
 
 const CNY = '¥';
 const HKD = 'HK$';
 const USD = '$';
 
-export default function StockItem({ stock }) {
+export default function StockItem({ stock, onDelete }) {
     const chartRef = useRef(null);
     const [expanded, setExpanded] = useState(false);
     const [unit, setUnit] = useState('DAY');
@@ -29,6 +29,24 @@ export default function StockItem({ stock }) {
 
     const stop = (e) => e.stopPropagation();
 
+    const handleUnsubscribe = async (e) => {
+        e.stopPropagation();
+        if (!confirm('Confirm unsubscribe ' + stock.symbol + '?')) return;
+
+        try {
+            const success = await unsubscribeStock(stock.symbol);
+            if (success) {
+                alert('Unsubscribe success!');
+                if (onDelete) onDelete(stock.symbol);
+            } else {
+                alert('Unsubscribe failed: server error');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Unsubscribe failed: network error');
+        }
+    };
+
     useEffect(() => {
         if (!expanded || !chartRef.current) return;
         const load = async () => {
@@ -38,14 +56,14 @@ export default function StockItem({ stock }) {
             const canvas = chartRef.current;
             const ctx = canvas.getContext('2d');
             const w = canvas.width;
-            const h = canvas.height;
+            const h = canvas.height; // 🔥 修复这里！
 
             ctx.clearRect(0, 0, w, h);
             ctx.fillStyle = '#1b001b';
             ctx.fillRect(0, 0, w, h);
 
             const k = data.stockHistoryVoList;
-            const pad = 40;
+            const pad = 50;
             const pw = w - pad * 2;
             const ph = h - pad * 2;
             const n = k.length;
@@ -60,8 +78,8 @@ export default function StockItem({ stock }) {
             const x = i => pad + i * gap + gap / 2;
             const y = p => h - pad - (p - min) / rng * ph;
 
-            // grid
-            ctx.strokeStyle = 'rgba(255,105,180,0.2)';
+            // 网格
+            ctx.strokeStyle = 'rgba(255,105,180,0.15)';
             ctx.lineWidth = 1;
             for (let i = 0; i <= 5; i++) {
                 const cy = pad + (ph / 5) * i;
@@ -71,7 +89,7 @@ export default function StockItem({ stock }) {
                 ctx.stroke();
             }
 
-            // K
+            // K线
             k.forEach((c, i) => {
                 const cx = x(i);
                 const green = c.close >= c.open;
@@ -88,13 +106,33 @@ export default function StockItem({ stock }) {
                 ctx.fillRect(cx - barW / 2, t, barW, ht);
             });
 
-            // border
+            // 纵轴价格
+            ctx.fillStyle = '#ffb6e6';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 4; i++) {
+                const price = min + (rng * i) / 4;
+                const cy = pad + ph - (ph * i) / 4;
+                ctx.fillText(price.toFixed(2), pad - 6, cy + 4);
+            }
+
+            // 横轴周期
+            ctx.textAlign = 'center';
+            const step = Math.max(1, Math.floor(n / 6));
+            for (let i = 0; i < n; i += step) {
+                const cx = x(i);
+                const label = unit === 'DAY' ? i + 1 : unit === 'WEEK' ? 'W' + i : 'M' + i;
+                ctx.fillText(label, cx, h - pad + 15);
+            }
+
+            // 外框
             ctx.strokeStyle = '#ff69b4';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(pad, pad);
             ctx.lineTo(pad, h - pad);
             ctx.lineTo(w - pad, h - pad);
+            ctx.lineTo(w - pad, pad);
             ctx.stroke();
 
         };
@@ -114,13 +152,37 @@ export default function StockItem({ stock }) {
                 color: '#fff',
             }}
         >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{stock.symbol}</div>
-                <div style={{ color, fontSize: '16px' }}>
+            <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '1rem'
+            }}>
+                <div style={{ fontSize: '18px', fontWeight: 'bold', flex: 1 }}>
+                    {stock.symbol}
+                </div>
+
+                <div style={{ color, fontSize: '16px', flexShrink: 0 }}>
                     {currency}{Number(stock.currentPrice).toFixed(2)}
                     {' '}
                     ({change >= 0 ? '+' : ''}{change.toFixed(2)}%)
                 </div>
+
+                <button
+                    onClick={handleUnsubscribe}
+                    style={{
+                        padding: '0.3rem 0.7rem',
+                        fontSize: '18px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: '#444',
+                        color: '#ff88a8',
+                        cursor: 'pointer',
+                        flexShrink: 0
+                    }}
+                >
+                    Unsubscribe
+                </button>
             </div>
 
             {expanded && (
@@ -166,10 +228,10 @@ export default function StockItem({ stock }) {
                     <canvas
                         ref={chartRef}
                         width={600}
-                        height={260}
+                        height={280}
                         style={{
                             width: '100%',
-                            height: 260,
+                            height: 280,
                             borderRadius: 10,
                             backgroundColor: '#1b001b',
                         }}

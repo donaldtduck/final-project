@@ -1,10 +1,7 @@
 package com.finance.portfolio.controller;
 
 import com.finance.portfolio.enums.TimeUnitEnum;
-import com.finance.portfolio.model.dto.AddStockDto;
-import com.finance.portfolio.model.dto.PerformanceQueryDto;
-import com.finance.portfolio.model.dto.RemoveStockDto;
-import com.finance.portfolio.model.dto.StockQueryDto;
+import com.finance.portfolio.model.dto.*;
 import com.finance.portfolio.model.entity.Stock;
 import com.finance.portfolio.model.vo.MyStockPerformanceVo;
 import com.finance.portfolio.model.vo.StockHistoryVo;
@@ -137,6 +134,21 @@ public class StockController {
     public ResponseEntity<Stock> getStockById(@PathVariable Long id) {
         Stock stock = stockService.getStockById(id);
         return ResponseEntity.ok(stock);
+    }
+
+    // =============================
+    // 🔥 固定路径 /watch 必须写在上面
+    // =============================
+    @PostMapping("/watch")
+    public ResponseEntity<String> addWatch(@RequestParam String symbol) {
+        stockService.addWatchStock(symbol);
+        return ResponseEntity.ok("subscribed");
+    }
+
+    @DeleteMapping("/watch")
+    public ResponseEntity<String> removeWatch(@RequestParam String symbol) {
+        stockService.removeWatchStock(symbol);
+        return ResponseEntity.ok("unsubscribed");
     }
 
 }

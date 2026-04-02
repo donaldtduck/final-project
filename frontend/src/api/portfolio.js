@@ -101,3 +101,34 @@ export async function getAllStocks() {
         return [];
     }
 }
+
+// 取消订阅（删除自选）
+export async function unsubscribeStock(symbol) {
+    try {
+        const res = await fetch(
+            `${BASE_URL}/stock/watch?symbol=${encodeURIComponent(symbol)}`,
+            { method: 'DELETE' }
+        );
+        if (!res.ok) throw new Error('Unsubscribe failed');
+        // 🔥 只改这里：不解析 JSON，直接返回成功
+        return true;
+    } catch (err) {
+        console.error(err);
+        return false;
+    }
+}
+
+// 订阅也一起修一下
+export async function subscribeStock(symbol) {
+    try {
+        const res = await fetch(
+            `${BASE_URL}/stock/watch?symbol=${encodeURIComponent(symbol)}`,
+            { method: 'POST' }
+        );
+        if (!res.ok) throw new Error('Subscribe failed');
+        return true;
+    } catch (err) {
+        console.error(err);
+        return false;
+    }
+}

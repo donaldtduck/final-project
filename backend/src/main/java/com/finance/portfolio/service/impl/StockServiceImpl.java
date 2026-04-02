@@ -317,52 +317,39 @@ public class StockServiceImpl implements StockService {
         return stockMapper.selectById(id);
     }
 
-    // 原有getAllStockSnapshots方法（保留，新增时自动入库symbol）
     @Override
     public List<StockSnapshotVo> getAllStockSnapshots() {
         List<StockSnapshotVo> result = new ArrayList<>();
-        RestTemplate restTemplate = new RestTemplate();
 
         try {
-            // 1. 拉取新浪股票代码
-            String url = "https://hq.sinajs.cn/list=fuHotStock";
-            String response = restTemplate.getForObject(url, String.class);
-            if (response == null) return result;
+            // 1. 从数据库查询 所有 股票 symbol（你自己插入的那些）
+            List<Stock> stockList = stockMapper.selectAll();
 
-            List<String> symbolList = new ArrayList<>();
-            String[] parts = response.split(",");
-            for (String p : parts) {
-                if (p.startsWith("\"") && p.length() > 8) {
-                    String symbol = p.replace("\"", "").trim();
-                    if ((symbol.startsWith("sh") || symbol.startsWith("sz")) && symbol.length() == 8) {
-                        symbolList.add(symbol);
-                    }
-                }
-                if (symbolList.size() >= 50) break;
-            }
+            // 2. 遍历每个股票，获取实时价格
+            for (Stock stock : stockList) {
+                String symbol = stock.getSymbol();
 
-            // 2. 批量插入数据库（带ID，自动去重）
-            if (!symbolList.isEmpty()) {
-                stockMapper.batchInsert(symbolList);
-            }
-
-            // 3. 查询行情返回前端
-            for (String symbol : symbolList) {
                 try {
+                    // 3. 路由到对应市场（A股/港股/美股，你已实现）
                     BigDecimal currentPrice = marketDataRouter.route(symbol).getCurrentPrice(symbol);
                     BigDecimal lastClose = marketDataRouter.route(symbol).getLastClosePrice(symbol);
-                    BigDecimal changeRate = calculateChangeRate(currentPrice, lastClose);
 
+                    // 4. 计算涨跌幅（百分比，保留2位小数）
+                    BigDecimal priceChangeRate = calculateChangeRate(currentPrice, lastClose);
+
+                    // 5. 封装 VO
                     StockSnapshotVo vo = new StockSnapshotVo();
                     vo.setSymbol(symbol);
                     vo.setCurrentPrice(currentPrice);
-                    vo.setPriceChangeRate(changeRate);
+                    vo.setPriceChangeRate(priceChangeRate);
+
                     result.add(vo);
 
                 } catch (Exception e) {
-                    System.err.println("处理股票" + symbol + "失败：" + e.getMessage());
+                    System.err.println("获取行情失败 symbol: " + symbol + "，错误：" + e.getMessage());
                 }
             }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -379,6 +366,17 @@ public class StockServiceImpl implements StockService {
                 .divide(lastClose, 4, RoundingMode.HALF_UP)
                 .multiply(new BigDecimal("100"))
                 .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    @Override
+    public void addWatchStock(String symbol) {
+        // 批量插入自动去重
+        stockMapper.batchInsert(Collections.singletonList(symbol));
+    }
+
+    @Override
+    public void removeWatchStock(String symbol) {
+        stockMapper.deleteBySymbol(symbol);
     }
 
 }
