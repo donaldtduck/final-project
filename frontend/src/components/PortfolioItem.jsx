@@ -297,12 +297,15 @@ export default function PortfolioItem({ item }) {
 
                     <canvas
                         ref={chartRef}
-                        width={600}
-                        height={280}
+                        width={800}
+                        height={400}
                         onClick={stop}
                         style={{
-                            width: '100%', height: '280px', borderRadius: '10px',
-                            backgroundColor: '#1b001b', display: 'block'
+                            width: '100%',
+                            height: '280px',
+                            borderRadius: '10px',
+                            backgroundColor: '#1b001b',
+                            display: 'block'
                         }}
                     />
 

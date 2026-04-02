@@ -51,7 +51,7 @@ export default function Navbar({ onAddSuccess }) {
                                 fontSize: '16px' /* 导航字体放大 */
                             }}
                         >
-                            Stocks
+                            Followed Stocks
                         </NavLink>
                     </div>
                 </div>
@@ -87,7 +87,7 @@ export default function Navbar({ onAddSuccess }) {
                             fontSize: '15px' /* 按钮字体更大 */
                         }}
                     >
-                        + Subscribe
+                        + Follow
                     </button>
                 </div>
             </nav>

@@ -21,7 +21,7 @@
 
 /* Individual Summary Card */
 .summary-card {
-    background: linear-gradient(145deg, #030d2f, #1b0966);
+    background: #1e1a3a;
     color: #fff;
     border-radius: 14px;
     padding: 1.2rem 1.5rem;
@@ -40,7 +40,7 @@
     box-shadow:
         0 12px 30px rgba(218, 112, 214, 0.8),
         0 0 20px rgba(238, 130, 238, 0.6) inset;
-    background: linear-gradient(145deg, #3d6dc0, #6c72c4);
+    background: linear-gradient(145deg, #3d6dc0, #1e1a3a);
 }
 
 /* Label (上方标题) */

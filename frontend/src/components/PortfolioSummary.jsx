@@ -1,74 +1,24 @@
-import { useState, useEffect } from 'react';
-import {
-    LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, Legend
-} from 'recharts';
-
-import {
-    DndContext,
-    closestCenter
-} from '@dnd-kit/core';
-
-import {
-    SortableContext,
-    arrayMove,
-    useSortable,
-    rectSortingStrategy
-} from '@dnd-kit/sortable';
-
+import { useState } from 'react';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { SortableContext, arrayMove, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-
-import { getPortfolioOverview, getPortfolioChart, getPortfolio } from '../api/portfolio';
 import './PortfolioSummary.css';
 
-// 可拖拽卡片
 function SortableCard({ id, label, value, className }) {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition
-    } = useSortable({ id });
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        cursor: 'grab'
-    };
-
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+    const style = { transform: CSS.Transform.toString(transform), transition, cursor: 'grab' };
     return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            {...attributes}
-            {...listeners}
-            className="summary-card"
-        >
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="summary-card">
             <div className="label">{label}</div>
             <div className={`value ${className || ''}`}>{value}</div>
         </div>
     );
 }
 
-export default function PortfolioSummary() {
+// 👇 接收 props，不再自己加载
+export default function PortfolioSummary({ overview, holdings, chartData }) {
     const COLORS = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
-
-    const [summary, setSummary] = useState({
-        totalValue: 0,
-        totalCost: 0,
-        unrealizedPnl: 0,
-        realizedPnl: 0,
-        returnRate: 0,
-        todayPnl: 0,
-        todayChange: 0,
-        totalHoldings: 0,
-    });
-
-    const [chartData, setChartData] = useState([]);
-    const [pieData, setPieData] = useState([]);
-    const [loading, setLoading] = useState(true);
-
     const [items, setItems] = useState([
         { id: 'totalValue', label: 'Total Value' },
         { id: 'totalCost', label: 'Total Cost' },
@@ -90,90 +40,52 @@ export default function PortfolioSummary() {
         }
     };
 
-    // ————————————————————————————————————————
-    // 完全按照你 Java 代码的逻辑
-    // ————————————————————————————————————————
     const getRate = (symbol) => {
         const s = symbol.toLowerCase();
-        if (s.startsWith('sh') || s.startsWith('sz')) return 0.14;    // CNY
-        if (s.startsWith('hk')) return 0.128;                        // HKD
-        return 1.0;                                                  // USD
+        if (s.startsWith('sh') || s.startsWith('sz')) return 0.14;
+        if (s.startsWith('hk')) return 0.128;
+        return 1.0;
     };
 
-    useEffect(() => {
-        const load = async () => {
-            const overview = await getPortfolioOverview();
-            const chart = await getPortfolioChart();
-            const holdings = await getPortfolio();
-
-            setSummary(overview);
-
-            const formatted = chart?.navList?.map((nav, i) => ({
-                date: nav.date,
-                value: nav.totalNav,
-                cost: chart.costList[i]?.totalCost || 0,
-            })) || [];
-            setChartData(formatted);
-
-            // ————————————————————————————————————————
-            // 🔥 饼图：全部换算成美元再渲染
-            // ————————————————————————————————————————
-            const pie = holdings.map(item => {
-                const totalValue = item.currentPrice * item.volume;
-                const rate = getRate(item.symbol);
-                const usdValue = totalValue * rate;
-
-                return {
-                    name: item.symbol,
-                    value: usdValue, // 饼图用美元
-                };
-            });
-
-            setPieData(pie);
-            setLoading(false);
-        };
-        load();
-    }, []);
-
-    if (loading) {
-        return <div style={{ color: '#fff', padding: '2rem' }}>Loading...</div>;
-    }
+    // 👇 饼图直接用传入的 holdings
+    const pieData = holdings.map(item => {
+        const totalValue = item.currentPrice * item.volume;
+        const rate = getRate(item.symbol);
+        const usdValue = totalValue * rate;
+        return { name: item.symbol, value: usdValue };
+    });
 
     const getCardContent = (id) => {
         switch (id) {
-            case 'totalValue':
-                return { value: `$${Number(summary.totalValue).toFixed(2)}` };
-            case 'totalCost':
-                return { value: `$${Number(summary.totalCost).toFixed(2)}` };
+            case 'totalValue': return { value: `$${Number(overview.totalValue).toFixed(2)}` };
+            case 'totalCost': return { value: `$${Number(overview.totalCost).toFixed(2)}` };
             case 'unrealized':
                 return {
-                    value: `$${Number(summary.unrealizedPnl).toFixed(2)}`,
-                    className: Number(summary.unrealizedPnl) >= 0 ? 'green' : 'red'
+                    value: `$${Number(overview.unrealizedPnl).toFixed(2)}`,
+                    className: Number(overview.unrealizedPnl) >= 0 ? 'green' : 'red'
                 };
             case 'realized':
                 return {
-                    value: `$${Number(summary.realizedPnl).toFixed(2)}`,
-                    className: Number(summary.realizedPnl) >= 0 ? 'green' : 'red'
+                    value: `$${Number(overview.realizedPnl).toFixed(2)}`,
+                    className: Number(overview.realizedPnl) >= 0 ? 'green' : 'red'
                 };
             case 'return':
                 return {
-                    value: `${Number(summary.returnRate).toFixed(2)}%`,
-                    className: Number(summary.returnRate) >= 0 ? 'green' : 'red'
+                    value: `${Number(overview.returnRate).toFixed(2)}%`,
+                    className: Number(overview.returnRate) >= 0 ? 'green' : 'red'
                 };
             case 'todayPL':
                 return {
-                    value: `$${Number(summary.todayPnl).toFixed(2)}`,
-                    className: Number(summary.todayPnl) >= 0 ? 'green' : 'red'
+                    value: `$${Number(overview.todayPnl).toFixed(2)}`,
+                    className: Number(overview.todayPnl) >= 0 ? 'green' : 'red'
                 };
             case 'todayChange':
                 return {
-                    value: `${Number(summary.todayChange).toFixed(2)}%`,
-                    className: Number(summary.todayChange) >= 0 ? 'green' : 'red'
+                    value: `${Number(overview.todayChange).toFixed(2)}%`,
+                    className: Number(overview.todayChange) >= 0 ? 'green' : 'red'
                 };
-            case 'holdings':
-                return { value: summary.totalHoldings };
-            default:
-                return { value: '' };
+            case 'holdings': return { value: overview.totalHoldings };
+            default: return { value: '' };
         }
     };
 
@@ -181,22 +93,10 @@ export default function PortfolioSummary() {
         <div className="portfolio-summary-container">
             <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
-                    <div className="summary-cards" style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(8, 1fr)',
-                        gap: '1rem'
-                    }}>
+                    <div className="summary-cards" style={{ gridTemplateColumns: 'repeat(8, 1fr)', gap: '1rem' }}>
                         {items.map(item => {
                             const c = getCardContent(item.id);
-                            return (
-                                <SortableCard
-                                    key={item.id}
-                                    id={item.id}
-                                    label={item.label}
-                                    value={c.value}
-                                    className={c.className}
-                                />
-                            );
+                            return <SortableCard key={item.id} id={item.id} label={item.label} value={c.value} className={c.className} />;
                         })}
                     </div>
                 </SortableContext>
@@ -222,7 +122,6 @@ export default function PortfolioSummary() {
                     </ResponsiveContainer>
                 </div>
 
-                {/* 🔥 饼图：全部按美元计算 */}
                 <div className="pie-chart-wrapper">
                     <h3>Portfolio Share</h3>
                     <PieChart width={250} height={250}>
@@ -235,25 +134,16 @@ export default function PortfolioSummary() {
                             outerRadius={100}
                             innerRadius={50}
                             labelLine={false}
-                            labelPosition="inside"
-                            label={({ percent }) => (
-                                <tspan fill="white" fontSize="13" fontWeight="bold">
-                                    {(percent * 100).toFixed(0)}%
-                                </tspan>
-                            )}
+                            label={({ percent }) => <tspan fill="white" fontSize="13" fontWeight="bold">{(percent * 100).toFixed(0)}%</tspan>}
                         >
-                            {pieData.map((entry, index) => (
-                                <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                            ))}
+                            {pieData.map((_, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
                         </Pie>
-
                         <Tooltip
                             contentStyle={{ backgroundColor: '#222', border: 'none', color: '#fff' }}
                             formatter={(value, _name, props) => {
                                 const total = pieData.reduce((sum, item) => sum + item.value, 0);
                                 const pct = ((value / total) * 100).toFixed(0);
-                                const symbol = props.payload.name;
-                                return [`$${value.toFixed(2)} | ${pct}% `, `${symbol}`];
+                                return [`$${value.toFixed(2)} | ${pct}%`, props.payload.name];
                             }}
                         />
                         <Legend wrapperStyle={{ color: '#fff', fontSize: '0.8rem' }} />

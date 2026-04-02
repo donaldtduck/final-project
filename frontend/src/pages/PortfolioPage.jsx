@@ -3,229 +3,197 @@ import PortfolioItem from '../components/PortfolioItem';
 import PortfolioSummary from '../components/PortfolioSummary';
 import Divider from '../components/Divider';
 import Navbar from '../components/Navbar';
-import { getPortfolio } from '../api/portfolio';
-
-// === Mock Data ===
-const mockPortfolio = [
-    { id: 1, symbol: "AAPL", name: "Apple", volume: 50, purchasePrice: 120, currentPrice: 130, prevClose: 128 },
-    { id: 2, symbol: "TSLA", name: "Tesla", volume: 10, purchasePrice: 700, currentPrice: 720, prevClose: 710 },
-    { id: 3, symbol: "AMZN", name: "Amazon", volume: 5, purchasePrice: 3000, currentPrice: 3100, prevClose: 3050 },
-    { id: 4, symbol: "MSFT", name: "Microsoft", volume: 20, purchasePrice: 250, currentPrice: 260, prevClose: 258 },
-];
+import AIChatPanel from '../components/AIChatPanel';
+import { getPortfolio, getPortfolioOverview, getPortfolioChart } from '../api/portfolio';
 
 export default function PortfolioPage() {
     const [portfolio, setPortfolio] = useState([]);
+    const [summary, setSummary] = useState({});
+    const [chartData, setChartData] = useState([]);
     const [search, setSearch] = useState('');
-    const [sortKey, setSortKey] = useState('symbol'); // 默认按 symbol 排序
-    const [sortOrder, setSortOrder] = useState('asc'); // asc 或 desc
+    const [sortKey, setSortKey] = useState('symbol');
+    const [sortOrder, setSortOrder] = useState('asc');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // setPortfolio(mockPortfolio);
-        // setLoading(false);
-        const fetchData = async () => {
+        const loadAll = async () => {
             setLoading(true);
+            const overview = await getPortfolioOverview();
+            const holdings = await getPortfolio();
+            const chart = await getPortfolioChart();
 
-            const res = await getPortfolio();
+            setSummary(overview);
+            setPortfolio(holdings || []);
 
-            console.log(res);
-            if (Array.isArray(res)) {
-                const mapped = res.map((item, index) => ({
-                    id: index + 1,
-                    symbol: item.symbol,
-                    name: item.symbol,
-                    volume: item.volume,
-                    purchasePrice: Number(item.purchasePrice).toFixed(2),
-                    currentPrice: Number(item.currentPrice).toFixed(2),
-                    prevClose: Number(item.currentPrice).toFixed(2),
-                    unrealizedPnl: item.unrealizedPnl,
-                    todayPnl: item.todayPnl
-                }));
-
-                console.log(mapped);
-                setPortfolio(mapped);
-            }
-
+            const formatted = chart?.navList?.map((nav, i) => ({
+                date: nav.date,
+                value: nav.totalNav,
+                cost: chart.costList[i]?.totalCost || 0,
+            })) || [];
+            setChartData(formatted);
             setLoading(false);
         };
-
-        fetchData();
+        loadAll();
     }, []);
 
-    const summary = {
-        totalValue: portfolio.reduce((acc, i) => acc + (i.currentPrice * i.volume), 0),
-        totalCost: portfolio.reduce((acc, i) => acc + (i.purchasePrice * i.volume), 0),
-        unrealizedPL: portfolio.reduce((acc, i) => acc + ((i.currentPrice - i.purchasePrice) * i.volume), 0),
-        realizedPL: 0,
-        returnRate: portfolio.length
-            ? portfolio.reduce((acc, i) => acc + ((i.currentPrice - i.purchasePrice) / i.purchasePrice), 0) / portfolio.length
-            : 0,
-        todayPL: portfolio.reduce((acc, i) => acc + ((i.currentPrice - i.prevClose) * i.volume), 0),
-        todayChange: portfolio.length
-            ? portfolio.reduce((acc, i) => acc + ((i.currentPrice - i.prevClose) / i.prevClose), 0) / portfolio.length
-            : 0,
-        holdings: portfolio.length
-    };
-
-    const performanceData = [
-        { date: "2026-03-25", value: 100000 },
-        { date: "2026-03-26", value: 102500 },
-        { date: "2026-03-27", value: 104000 },
-        { date: "2026-03-28", value: 107000 },
-        { date: "2026-03-29", value: 110000 },
-        { date: "2026-03-30", value: 123800 },
-        { date: "2026-03-31", value: summary.totalValue }
-    ];
-
-    const pieData = portfolio.map(item => ({
-        name: item.symbol,
-        value: item.volume * item.currentPrice
-    }));
-
-    // 过滤 + 排序
     const filteredPortfolio = portfolio
         .filter(item =>
-            item.symbol.toLowerCase().includes(search.toLowerCase()) ||
-            item.name.toLowerCase().includes(search.toLowerCase())
+            item.symbol.toLowerCase().includes(search.toLowerCase())
         )
         .sort((a, b) => {
             let valA = a[sortKey];
             let valB = b[sortKey];
             if (typeof valA === 'string') valA = valA.toLowerCase();
             if (typeof valB === 'string') valB = valB.toLowerCase();
-            if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-            if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
-            return 0;
+            return sortOrder === 'asc' ? (valA < valB ? -1 : 1) : (valA > valB ? -1 : 1);
         });
 
     return (
         <div style={{ padding: '2rem', backgroundColor: '#111', minHeight: '100vh' }}>
-            <Navbar
-                onAddSuccess={(newItem) => {
-                    setPortfolio(prev => [...prev, newItem]);
-                }}
-            />
+            <Navbar onAddSuccess={() => { }} />
 
-
-            {/* PortfolioSummary */}
-            <PortfolioSummary summary={summary} performanceData={performanceData} pieData={pieData} />
-
-            <Divider />
-
-            {/* 搜索 + 排序 */}
-            <div
-                style={{
-                    display: 'flex',
-                    justifyContent: 'flex-start',
-                    gap: '1rem',
-                    flexWrap: 'wrap',
-                    marginBottom: '1rem',
-                }}
-            >
-                <input
-                    type="text"
-                    placeholder="Search symbol or name"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    style={{
-                        flex: '1 1 auto',
-                        minWidth: '150px', // 搜索框短一点
-                        padding: '0.5rem 1rem',
-                        borderRadius: '6px',
-                        border: 'none',
-                        outline: 'none',
-                        fontSize: '0.95rem',
-                        background: 'linear-gradient(145deg, #030d2f, #1b0966)',
-                        color: '#fff',
-                        boxShadow:
-                            '0 4px 12px rgba(218,112,214,0.4), 0 0 10px rgba(238,130,238,0.2) inset',
-                        transition: 'box-shadow 0.3s, transform 0.3s',
-                    }}
-                    onFocus={(e) =>
-                    (e.target.style.boxShadow =
-                        '0 4px 12px rgba(218,112,214,0.8), 0 0 15px rgba(238,130,238,0.4) inset')
-                    }
-                    onBlur={(e) =>
-                    (e.target.style.boxShadow =
-                        '0 4px 12px rgba(218,112,214,0.4), 0 0 10px rgba(238,130,238,0.2) inset')
-                    }
-                />
-
-                <select
-                    value={sortKey}
-                    onChange={(e) => setSortKey(e.target.value)}
-                    style={{
-                        minWidth: '100px',
-                        flex: '0 0 auto',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '6px',
-                        border: 'none',
-                        outline: 'none',
-                        background: 'linear-gradient(145deg, #030d2f, #1b0966)',
-                        color: '#fff',
-                        boxShadow:
-                            '0 4px 12px rgba(218,112,214,0.4), 0 0 10px rgba(238,130,238,0.2) inset',
-                        cursor: 'pointer',
-                        transition: 'box-shadow 0.3s, transform 0.3s',
-                    }}
-                    onFocus={(e) =>
-                    (e.target.style.boxShadow =
-                        '0 4px 12px rgba(218,112,214,0.8), 0 0 15px rgba(238,130,238,0.4) inset')
-                    }
-                    onBlur={(e) =>
-                    (e.target.style.boxShadow =
-                        '0 4px 12px rgba(218,112,214,0.4), 0 0 10px rgba(238,130,238,0.2) inset')
-                    }
-                >
-                    <option value="symbol">Symbol</option>
-                    <option value="name">Name</option>
-                    <option value="currentPrice">Current Price</option>
-                    <option value="volume">Volume</option>
-                </select>
-
-                <select
-                    value={sortOrder}
-                    onChange={(e) => setSortOrder(e.target.value)}
-                    style={{
-                        minWidth: '100px',
-                        flex: '0 0 auto',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '6px',
-                        border: 'none',
-                        outline: 'none',
-                        background: 'linear-gradient(145deg, #030d2f, #1b0966)',
-                        color: '#fff',
-                        boxShadow:
-                            '0 4px 12px rgba(218,112,214,0.4), 0 0 10px rgba(238,130,238,0.2) inset',
-                        cursor: 'pointer',
-                        transition: 'box-shadow 0.3s, transform 0.3s',
-                    }}
-                    onFocus={(e) =>
-                    (e.target.style.boxShadow =
-                        '0 4px 12px rgba(218,112,214,0.8), 0 0 15px rgba(238,130,238,0.4) inset')
-                    }
-                    onBlur={(e) =>
-                    (e.target.style.boxShadow =
-                        '0 4px 12px rgba(218,112,214,0.4), 0 0 10px rgba(238,130,238,0.2) inset')
-                    }
-                >
-                    <option value="asc">Asc</option>
-                    <option value="desc">Desc</option>
-                </select>
-            </div>
-
-            {/* PortfolioItem 列表，每行两个 */}
             {loading ? (
-                <div style={{ color: '#fff' }}>Loading...</div>
-            ) : filteredPortfolio.length === 0 ? (
-                <div style={{ color: '#fff' }}>No items found.</div>
-            ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-                    {filteredPortfolio.map(item => (
-                        item && <PortfolioItem key={item.id} item={item} />
-                    ))}
+                <div style={pageLoadingStyle}>
+                    <div style={loadingBoxStyle}>
+                        <div style={loadingSpinnerStyle} />
+                        <p style={loadingTextStyle}>Loading portfolio data...</p>
+                    </div>
                 </div>
+            ) : (
+                <>
+                    <PortfolioSummary
+                        overview={summary}
+                        holdings={portfolio}
+                        chartData={chartData}
+                    />
+
+                    <Divider />
+
+                    <div style={{ display: 'flex', gap: '2rem' }}>
+
+                        {/* ========== 左边：持仓区域 ========== */}
+                        <div style={leftContainerStyle}>
+                            {/* 👇 这里加了持仓区域标题 */}
+                            <h3 style={sectionTitleStyle}>My Positions</h3>
+
+                            <div style={searchBarStyle}>
+                                <input
+                                    type="text"
+                                    placeholder="Search symbol"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    style={searchInputStyle}
+                                />
+                                <select value={sortKey} onChange={(e) => setSortKey(e.target.value)} style={selectStyle}>
+                                    <option value="symbol">Symbol</option>
+                                    <option value="volume">Volume</option>
+                                </select>
+                                <select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} style={selectStyle}>
+                                    <option value="asc">Asc</option>
+                                    <option value="desc">Desc</option>
+                                </select>
+                            </div>
+
+                            {/* 内部滚动区域 */}
+                            <div style={listScrollStyle}>
+                                {filteredPortfolio.map(item => (
+                                    <PortfolioItem key={item.id} item={item} />
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* 右边 AI 聊天 */}
+                        <div style={{ flex: 1 }}>
+                            <AIChatPanel portfolio={portfolio} summary={summary} />
+                        </div>
+                    </div>
+                </>
             )}
         </div>
     );
 }
+
+// ———— Loading 样式 ————
+const pageLoadingStyle = {
+    minHeight: '60vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+};
+
+const loadingBoxStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '1.2rem',
+    padding: '2.5rem 3rem',
+    background: 'linear-gradient(145deg, #1b001b, #30021c)',
+    borderRadius: '16px',
+    boxShadow: '0 8px 25px rgba(155,27,77,0.5), 0 0 15px rgba(218,112,214,0.2) inset',
+};
+
+const loadingSpinnerStyle = {
+    width: '40px',
+    height: '40px',
+    border: '3px solid rgba(255,192,245,0.2)',
+    borderTop: '3px solid #ff69b4',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
+};
+
+const loadingTextStyle = {
+    color: '#ffc0f5',
+    fontSize: '1rem',
+    margin: 0,
+    textShadow: '0 0 6px rgba(255,192,245,0.4)',
+};
+
+// ———— 左边区域 ————
+const leftContainerStyle = {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+    height: '720px',
+};
+
+// 👇 持仓区域标题样式（和你整体风格一致）
+const sectionTitleStyle = {
+    color: '#ffc0f5',
+    fontSize: '1.25rem',
+    fontWeight: 600,
+    margin: '0 0 0.2rem 0',
+    textShadow: '0 0 6px rgba(255,192,245,0.4)',
+};
+
+const searchBarStyle = {
+    display: 'flex',
+    gap: '1rem',
+    marginBottom: '0.5rem',
+};
+
+const listScrollStyle = {
+    flex: 1,
+    overflowY: 'auto',
+    display: 'grid',
+    gap: '1rem',
+    paddingRight: '4px',
+};
+
+// ———— 输入框样式 ————
+const searchInputStyle = {
+    flex: 1,
+    padding: '0.5rem 1rem',
+    borderRadius: 6,
+    border: 'none',
+    background: '#1e1a3a',
+    color: '#fff',
+};
+
+const selectStyle = {
+    padding: '0.5rem 1rem',
+    background: '#030d2f',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 6,
+};

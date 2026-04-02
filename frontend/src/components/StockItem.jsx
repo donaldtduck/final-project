@@ -49,23 +49,42 @@ export default function StockItem({ stock, onDelete }) {
 
     useEffect(() => {
         if (!expanded || !chartRef.current) return;
+
         const load = async () => {
             const data = await getStockPerformance(stock.symbol, slice, unit);
             if (!data || !data.stockHistoryVoList) return;
 
             const canvas = chartRef.current;
             const ctx = canvas.getContext('2d');
-            const w = canvas.width;
-            const h = canvas.height; // 🔥 修复这里！
+            const dpr = window.devicePixelRatio || 1;
 
-            ctx.clearRect(0, 0, w, h);
+            // CSS 显示尺寸
+            const cssWidth = canvas.offsetWidth;
+            const cssHeight = canvas.offsetHeight;
+
+            // 实际画布尺寸 = 显示尺寸 × DPR（高清关键）
+            const w = cssWidth * dpr;
+            const h = cssHeight * dpr;
+
+            // 设置真实分辨率
+            canvas.width = w;
+            canvas.height = h;
+
+            // 缩放上下文，避免文字变形
+            ctx.scale(dpr, dpr);
+
+            // 用 CSS 尺寸计算布局，不再拉伸变形
+            const rectW = cssWidth;
+            const rectH = cssHeight;
+
+            ctx.clearRect(0, 0, rectW, rectH);
             ctx.fillStyle = '#1b001b';
-            ctx.fillRect(0, 0, w, h);
+            ctx.fillRect(0, 0, rectW, rectH);
 
             const k = data.stockHistoryVoList;
             const pad = 50;
-            const pw = w - pad * 2;
-            const ph = h - pad * 2;
+            const pw = rectW - pad * 2;
+            const ph = rectH - pad * 2;
             const n = k.length;
             const gap = pw / n;
             const barW = gap * 0.6;
@@ -76,7 +95,7 @@ export default function StockItem({ stock, onDelete }) {
             const rng = max - min || 1;
 
             const x = i => pad + i * gap + gap / 2;
-            const y = p => h - pad - (p - min) / rng * ph;
+            const y = p => rectH - pad - (p - min) / rng * ph;
 
             // 网格
             ctx.strokeStyle = 'rgba(255,105,180,0.15)';
@@ -85,7 +104,7 @@ export default function StockItem({ stock, onDelete }) {
                 const cy = pad + (ph / 5) * i;
                 ctx.beginPath();
                 ctx.moveTo(pad, cy);
-                ctx.lineTo(w - pad, cy);
+                ctx.lineTo(rectW - pad, cy);
                 ctx.stroke();
             }
 
@@ -106,7 +125,7 @@ export default function StockItem({ stock, onDelete }) {
                 ctx.fillRect(cx - barW / 2, t, barW, ht);
             });
 
-            // 纵轴价格
+            // 价格文字（现在正常不扁）
             ctx.fillStyle = '#ffb6e6';
             ctx.font = '12px Arial';
             ctx.textAlign = 'right';
@@ -116,13 +135,13 @@ export default function StockItem({ stock, onDelete }) {
                 ctx.fillText(price.toFixed(2), pad - 6, cy + 4);
             }
 
-            // 横轴周期
+            // 横轴文字
             ctx.textAlign = 'center';
             const step = Math.max(1, Math.floor(n / 6));
             for (let i = 0; i < n; i += step) {
                 const cx = x(i);
                 const label = unit === 'DAY' ? i + 1 : unit === 'WEEK' ? 'W' + i : 'M' + i;
-                ctx.fillText(label, cx, h - pad + 15);
+                ctx.fillText(label, cx, rectH - pad + 15);
             }
 
             // 外框
@@ -130,12 +149,12 @@ export default function StockItem({ stock, onDelete }) {
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(pad, pad);
-            ctx.lineTo(pad, h - pad);
-            ctx.lineTo(w - pad, h - pad);
-            ctx.lineTo(w - pad, pad);
+            ctx.lineTo(pad, rectH - pad);
+            ctx.lineTo(rectW - pad, rectH - pad);
+            ctx.lineTo(rectW - pad, pad);
             ctx.stroke();
-
         };
+
         load();
     }, [expanded, slice, unit]);
 
@@ -181,7 +200,7 @@ export default function StockItem({ stock, onDelete }) {
                         flexShrink: 0
                     }}
                 >
-                    Unsubscribe
+                    Unfollow
                 </button>
             </div>
 
@@ -227,11 +246,9 @@ export default function StockItem({ stock, onDelete }) {
 
                     <canvas
                         ref={chartRef}
-                        width={600}
-                        height={280}
                         style={{
                             width: '100%',
-                            height: 280,
+                            height: '560px',
                             borderRadius: 10,
                             backgroundColor: '#1b001b',
                         }}

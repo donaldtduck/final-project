@@ -43,7 +43,7 @@ export default function SubscribeModal({ onClose, onSuccess }) {
     return (
         <div style={overlayStyle}>
             <div style={modalStyle}>
-                <h2 style={titleStyle}>Subscribe Stock</h2>
+                <h2 style={titleStyle}>Follow Stock</h2>
 
                 {/* Symbol Input */}
                 <input
@@ -117,7 +117,7 @@ const inputStyle = {
     border: 'none',
     outline: 'none',
     fontSize: '0.95rem',
-    background: 'linear-gradient(145deg, #030d2f, #1b0966)',
+    background: '#1e1a3a',
     color: '#fff',
     boxShadow: '0 4px 12px rgba(218,112,214,0.4), 0 0 10px rgba(238,130,238,0.2) inset',
     transition: 'all 0.3s ease',

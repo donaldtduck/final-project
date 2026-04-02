@@ -132,3 +132,50 @@ export async function subscribeStock(symbol) {
         return false;
     }
 }
+
+// 收集当前页面所有信息并发送到后端
+const sendPortfolioDataToBackend = async () => {
+    const payload = {
+        // 持仓列表
+        holdings: portfolio,
+        // 总览数据
+        summary: summary,
+        // 时间戳，方便后端记录
+        capturedAt: new Date().toISOString()
+    };
+
+    try {
+        const res = await fetch('http://localhost:8080/api/portfolio/capture', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+            alert('页面信息已发送到后端');
+        }
+    } catch (err) {
+        console.error('发送失败', err);
+    }
+};
+
+// =========================
+// ✅ AI 聊天接口（统一使用 BASE_URL）
+// =========================
+export async function sendAIChat(requestData) {
+    try {
+        const res = await fetch(`${BASE_URL}/ai/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(requestData),
+        });
+
+        if (!res.ok) throw new Error("AI chat failed");
+        return await res.json();
+    } catch (error) {
+        console.error("AI chat error:", error);
+        return null;
+    }
+}

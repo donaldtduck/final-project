@@ -25,7 +25,7 @@ export default function AddStockModal({ onClose, onSuccess }) {
     const handleSubmit = async () => {
         if (!symbol) return alert('Symbol required');
         if (!totalPrice && !quantity) {
-            return alert('Fill either totalPrice or quantity');
+            return alert('Fill either total Price or quantity');
         }
 
         const dto = {
@@ -59,6 +59,11 @@ export default function AddStockModal({ onClose, onSuccess }) {
                     style={inputStyle}
                 />
 
+                {/* 提示文字 */}
+                <div style={tipStyle}>
+                    Please fill either Total Price or Quantity (not both)
+                </div>
+
                 {/* 二选一区域 */}
                 <div style={{ display: 'flex', gap: '1rem' }}>
                     {/* —————— 🔥 左边：货币符号 + Total Price —————— */}
@@ -68,7 +73,6 @@ export default function AddStockModal({ onClose, onSuccess }) {
                         alignItems: 'center',
                         position: 'relative'
                     }}>
-                        {/* 货币符号固定在左侧 */}
                         <span style={{
                             position: 'absolute',
                             left: '12px',
@@ -91,7 +95,7 @@ export default function AddStockModal({ onClose, onSuccess }) {
                             }}
                             style={{
                                 ...inputStyle,
-                                paddingLeft: '32px', // 给符号留位置
+                                paddingLeft: '32px',
                                 opacity: quantity ? 0.5 : 1
                             }}
                         />
@@ -113,7 +117,7 @@ export default function AddStockModal({ onClose, onSuccess }) {
                     />
                 </div>
 
-                {/* Date */}
+                {/* Date —— 恢复成和其他框一样 */}
                 <input
                     type="datetime-local"
                     value={date}
@@ -135,7 +139,7 @@ export default function AddStockModal({ onClose, onSuccess }) {
     );
 }
 
-/* ===== 样式 完全不变 ===== */
+/* ===== 样式 ===== */
 const overlayStyle = {
     position: 'fixed',
     inset: 0,
@@ -169,10 +173,18 @@ const inputStyle = {
     border: 'none',
     outline: 'none',
     fontSize: '0.95rem',
-    background: 'linear-gradient(145deg, #030d2f, #1b0966)',
+    background: '#1e1a3a',
     color: '#fff',
     boxShadow: '0 4px 12px rgba(218,112,214,0.4), 0 0 10px rgba(238,130,238,0.2) inset',
     transition: 'all 0.3s ease',
+};
+
+// 提示样式
+const tipStyle = {
+    color: '#ffc0f5',
+    fontSize: '0.85rem',
+    marginBottom: '0.2rem',
+    fontStyle: 'italic',
 };
 
 const btnPrimary = {
