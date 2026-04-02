@@ -1,12 +1,11 @@
 package com.finance.portfolio.service.impl;
 
+import com.finance.portfolio.mapper.StockMapper;
+import com.finance.portfolio.model.dto.*;
+import com.finance.portfolio.model.entity.Stock;
 import com.finance.portfolio.model.vo.StockSnapshotVo;
 import com.finance.portfolio.exception.BusinessException;
 import com.finance.portfolio.mapper.TransactionRecordMapper;
-import com.finance.portfolio.model.dto.AddStockDto;
-import com.finance.portfolio.model.dto.PerformanceQueryDto;
-import com.finance.portfolio.model.dto.RemoveStockDto;
-import com.finance.portfolio.model.dto.StockQueryDto;
 import com.finance.portfolio.model.entity.TransactionRecord;
 import com.finance.portfolio.model.vo.MyStockPerformanceVo;
 import com.finance.portfolio.model.vo.StockVo;
@@ -261,16 +260,93 @@ public class StockServiceImpl implements StockService {
 
 
 
-// 从新浪API获取热门股票列表 + 价格 + 涨跌幅
+    // 1. 注入StockMapper（新增）
+    @Autowired
+    private StockMapper stockMapper;
+
+    // ===================== 新增：增/删/查实现 =====================
+    @Override
+    public Long addStockSymbol(StockDto stockDto) {
+        if (stockDto == null || stockDto.getSymbol() == null || stockDto.getSymbol().trim().isEmpty()) {
+            throw new BusinessException(400, "股票代码不能为空");
+        }
+        // 校验格式（仅允许sh/sz开头）
+        String symbol = stockDto.getSymbol().trim();
+        if (!symbol.startsWith("sh") && !symbol.startsWith("sz")) {
+            throw new BusinessException(400, "股票代码格式错误（需sh/sz开头，如sh600000）");
+        }
+
+        Stock stock = new Stock();
+        stock.setSymbol(symbol);
+        int row = stockMapper.insert(stock);
+        if (row > 0) {
+            return stock.getId(); // 返回自增ID
+        } else {
+            throw new BusinessException(500, "新增股票代码失败（可能已存在）");
+        }
+    }
+
+    @Override
+    public boolean deleteStockById(Long id) {
+        if (id == null || id <= 0) {
+            throw new BusinessException(400, "ID不能为空且必须大于0");
+        }
+        int row = stockMapper.deleteById(id);
+        return row > 0;
+    }
+
+    @Override
+    public boolean deleteStockBySymbol(String symbol) {
+        if (symbol == null || symbol.trim().isEmpty()) {
+            throw new BusinessException(400, "股票代码不能为空");
+        }
+        int row = stockMapper.deleteBySymbol(symbol.trim());
+        return row > 0;
+    }
+
+    @Override
+    public List<Stock> getAllStocks() {
+        return stockMapper.selectAll();
+    }
+
+    @Override
+    public Stock getStockById(Long id) {
+        if (id == null || id <= 0) {
+            throw new BusinessException(400, "ID不能为空且必须大于0");
+        }
+        return stockMapper.selectById(id);
+    }
+
+    // 原有getAllStockSnapshots方法（保留，新增时自动入库symbol）
     @Override
     public List<StockSnapshotVo> getAllStockSnapshots() {
         List<StockSnapshotVo> result = new ArrayList<>();
+        RestTemplate restTemplate = new RestTemplate();
 
         try {
-            // 1. 从新浪 API 获取 热门/涨幅榜 股票（约 50 只）
-            List<String> symbolList = getSinaHotStockSymbols();
+            // 1. 拉取新浪股票代码
+            String url = "https://hq.sinajs.cn/list=fuHotStock";
+            String response = restTemplate.getForObject(url, String.class);
+            if (response == null) return result;
 
-            // 2. 批量获取价格 & 涨跌幅
+            List<String> symbolList = new ArrayList<>();
+            String[] parts = response.split(",");
+            for (String p : parts) {
+                if (p.startsWith("\"") && p.length() > 8) {
+                    String symbol = p.replace("\"", "").trim();
+                    if ((symbol.startsWith("sh") || symbol.startsWith("sz")) && symbol.length() == 8) {
+                        symbolList.add(symbol);
+                    }
+                }
+                if (symbolList.size() >= 50) break;
+            }
+
+            // 2. 批量插入数据库（带ID，自动去重）
+            if (!symbolList.isEmpty()) {
+                stockMapper.batchInsert(symbolList);
+            }
+
+            // 3. 查询行情返回前端
             for (String symbol : symbolList) {
                 try {
                     BigDecimal currentPrice = marketDataRouter.route(symbol).getCurrentPrice(symbol);
@@ -281,10 +357,10 @@ public class StockServiceImpl implements StockService {
                     vo.setSymbol(symbol);
                     vo.setCurrentPrice(currentPrice);
                     vo.setPriceChangeRate(changeRate);
-
                     result.add(vo);
-                } catch (Exception ignored) {
-                    // 单只失败不影响整体
+
+                } catch (Exception e) {
+                    System.err.println("处理股票" + symbol + "失败：" + e.getMessage());
                 }
             }
         } catch (Exception e) {
@@ -294,35 +370,7 @@ public class StockServiceImpl implements StockService {
         return result;
     }
 
-// 从新浪获取热门股票列表（自动获取 40~50 只）
-private List<String> getSinaHotStockSymbols() {
-    RestTemplate restTemplate = new RestTemplate();
-    String url = "https://hq.sinajs.cn/list=fuHotStock";
-    List<String> symbols = new ArrayList<>();
-
-    try {
-        String response = restTemplate.getForObject(url, String.class);
-        if (response == null) return symbols; // 无数据返回空列表
-
-        String[] parts = response.split(",");
-        for (String p : parts) {
-            if (p.startsWith("\"") && p.length() > 8) {
-                String symbol = p.replace("\"", "").trim();
-                // 只保留沪深A股代码（sh/sz开头，8位）
-                if ((symbol.startsWith("sh") || symbol.startsWith("sz")) && symbol.length() == 8) {
-                    symbols.add(symbol);
-                }
-            }
-            if (symbols.size() >= 50) break; // 最多取50只
-        }
-    } catch (Exception e) {
-        System.err.println("拉取新浪热门股票列表失败：" + e.getMessage());
-    }
-
-    return symbols; // 失败返回空列表
-}
-
-// 涨跌幅计算（标准公式）
+    // 涨跌幅计算方法（保留）
     private BigDecimal calculateChangeRate(BigDecimal current, BigDecimal lastClose) {
         if (current == null || lastClose == null || lastClose.compareTo(BigDecimal.ZERO) == 0) {
             return BigDecimal.ZERO;

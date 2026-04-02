@@ -5,6 +5,7 @@ import com.finance.portfolio.model.dto.AddStockDto;
 import com.finance.portfolio.model.dto.PerformanceQueryDto;
 import com.finance.portfolio.model.dto.RemoveStockDto;
 import com.finance.portfolio.model.dto.StockQueryDto;
+import com.finance.portfolio.model.entity.Stock;
 import com.finance.portfolio.model.vo.MyStockPerformanceVo;
 import com.finance.portfolio.model.vo.StockHistoryVo;
 import com.finance.portfolio.model.vo.StockSnapshotVo;
@@ -84,6 +85,58 @@ public class StockController {
     public ResponseEntity<List<StockSnapshotVo>> getAllStocks() {
         List<StockSnapshotVo> allStockSnapshots = stockService.getAllStockSnapshots();
         return ResponseEntity.ok(allStockSnapshots);
+    }
+
+    // ===================== 新增增/删/查接口 =====================
+    /**
+     * 新增股票代码（返回ID）
+     * POST /api/stock/symbol
+     * 请求体：{"symbol":"sh600000"}
+     */
+    @PostMapping("/symbol")
+    public ResponseEntity<Long> addStockSymbol(@RequestBody StockDto stockDto) {
+        Long id = stockService.addStockSymbol(stockDto);
+        return ResponseEntity.ok(id);
+    }
+
+    /**
+     * 根据ID删除股票代码
+     * DELETE /api/stock/{id}
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Boolean> deleteStockById(@PathVariable Long id) {
+        boolean success = stockService.deleteStockById(id);
+        return ResponseEntity.ok(success);
+    }
+
+    /**
+     * 根据symbol删除股票代码
+     * DELETE /api/stock/symbol/{symbol}
+     */
+    @DeleteMapping("/symbol/{symbol}")
+    public ResponseEntity<Boolean> deleteStockBySymbol(@PathVariable String symbol) {
+        boolean success = stockService.deleteStockBySymbol(symbol);
+        return ResponseEntity.ok(success);
+    }
+
+    /**
+     * 查询所有股票（带ID）
+     * GET /api/stock/symbols
+     */
+    @GetMapping("/symbols")
+    public ResponseEntity<List<Stock>> getAllStockSymbols() {
+        List<Stock> stocks = stockService.getAllStocks();
+        return ResponseEntity.ok(stocks);
+    }
+
+    /**
+     * 根据ID查询股票
+     * GET /api/stock/symbol/{id}
+     */
+    @GetMapping("/symbol/{id}")
+    public ResponseEntity<Stock> getStockById(@PathVariable Long id) {
+        Stock stock = stockService.getStockById(id);
+        return ResponseEntity.ok(stock);
     }
 
 }
