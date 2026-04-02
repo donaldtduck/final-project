@@ -87,3 +87,17 @@ export async function getPortfolioChart() {
         return { navList: [], costList: [] };
     }
 }
+
+// =========================
+// ✅ 获取全部股票快照（你要的 /all）
+// =========================
+export async function getAllStocks() {
+    try {
+        const res = await fetch(`${BASE_URL}/stock/all`);
+        if (!res.ok) throw new Error("Failed to fetch all stocks");
+        return await res.json();
+    } catch (err) {
+        console.error(err);
+        return [];
+    }
+}
