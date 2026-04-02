@@ -7,6 +7,7 @@ import com.finance.portfolio.model.dto.RemoveStockDto;
 import com.finance.portfolio.model.dto.StockQueryDto;
 import com.finance.portfolio.model.vo.MyStockPerformanceVo;
 import com.finance.portfolio.model.vo.StockHistoryVo;
+import com.finance.portfolio.model.vo.StockSnapshotVo;
 import com.finance.portfolio.model.vo.StockVo;
 import com.finance.portfolio.service.MarketDataRouter;
 import com.finance.portfolio.service.StockService;
@@ -77,6 +78,12 @@ public class StockController {
 
         // 3. 返回结果
         return ResponseEntity.ok(performance);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<StockSnapshotVo>> getAllStocks() {
+        List<StockSnapshotVo> allStockSnapshots = stockService.getAllStockSnapshots();
+        return ResponseEntity.ok(allStockSnapshots);
     }
 
 }
