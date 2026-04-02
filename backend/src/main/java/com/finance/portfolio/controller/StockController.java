@@ -7,9 +7,11 @@ import com.finance.portfolio.model.dto.RemoveStockDto;
 import com.finance.portfolio.model.dto.StockQueryDto;
 import com.finance.portfolio.model.vo.MyStockPerformanceVo;
 import com.finance.portfolio.model.vo.StockHistoryVo;
+import com.finance.portfolio.model.vo.StockSnapshotVo;
 import com.finance.portfolio.model.vo.StockVo;
+import com.finance.portfolio.service.MarketDataRouter;
 import com.finance.portfolio.service.StockService;
-import com.finance.portfolio.util.SinaStockApiUtil;
+import com.finance.portfolio.service.impl.SinaCNMarketDataService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/stock")
@@ -26,11 +27,12 @@ public class StockController {
 
     @Autowired
     private StockService stockService;
-    private final SinaStockApiUtil sinaStockApiUtil;
+    @Autowired
+    private MarketDataRouter marketDataRouter;
 
     @PostMapping("/history")
     public List<StockHistoryVo> getStockHistory(@RequestBody StockQueryDto dto) {
-        return sinaStockApiUtil.getStockHistory(dto);
+        return marketDataRouter.route(dto.getSymbol()).getStockHistory(dto);
     }
 
     @PostMapping
@@ -76,6 +78,12 @@ public class StockController {
 
         // 3. 返回结果
         return ResponseEntity.ok(performance);
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<StockSnapshotVo>> getAllStocks() {
+        List<StockSnapshotVo> allStockSnapshots = stockService.getAllStockSnapshots();
+        return ResponseEntity.ok(allStockSnapshots);
     }
 
 }

@@ -2,6 +2,11 @@ import { useState, useEffect, useRef } from 'react';
 import './PortfolioItem.css';
 import { getStockPerformance } from '../api/portfolio';
 
+// 货币符号定义
+const CNY_TO_USD = '¥';    // A股
+const HKD_TO_USD = 'HK$'; // 港股
+const USD_TO_USD = '$';   // 美股
+
 // ✅ 移除股票接口
 export async function removeStock(dto) {
     try {
@@ -30,9 +35,22 @@ export default function PortfolioItem({ item }) {
     const [date, setDate] = useState('');
     const [msg, setMsg] = useState('');
 
-    const unrealizedPL = (item.currentPrice - item.purchasePrice) * item.volume;
-    const todayPL = (item.currentPrice - (item.prevClose || item.currentPrice)) * item.volume;
     const plColor = (value) => (value >= 0 ? 'green' : 'red');
+
+    // 根据股票代码获取货币符号
+    const getCurrencySymbol = () => {
+        const symbol = item.symbol.toLowerCase();
+        if (symbol.startsWith("sh") || symbol.startsWith("sz")) {
+            return CNY_TO_USD;
+        } else if (symbol.startsWith("hk")) {
+            return HKD_TO_USD;
+        } else {
+            return USD_TO_USD;
+        }
+    };
+
+    // 直接在这里拿到当前货币符号
+    const currency = getCurrencySymbol();
 
     const handleToggle = (e) => {
         e.stopPropagation();
@@ -219,22 +237,22 @@ export default function PortfolioItem({ item }) {
                 </div>
                 <div className="detail">
                     <div className="label">Avg Price</div>
-                    <div className="value">{Number(item.purchasePrice).toFixed(2)}</div>
+                    <div className="value">{currency}{Number(item.purchasePrice).toFixed(2)}</div>
                 </div>
                 <div className="detail">
                     <div className="label">Current</div>
-                    <div className="value">{Number(item.currentPrice).toFixed(2)}</div>
+                    <div className="value">{currency}{Number(item.currentPrice).toFixed(2)}</div>
                 </div>
                 <div className="detail">
                     <div className="label">Unrealized P/L</div>
-                    <div className={`value ${plColor(unrealizedPL)}`}>
-                        {Number(unrealizedPL).toFixed(2)}
+                    <div className={`value ${plColor(item.unrealizedPnl)}`}>
+                        {currency}{Number(item.unrealizedPnl).toFixed(2)}
                     </div>
                 </div>
                 <div className="detail">
                     <div className="label">Today P/L</div>
-                    <div className={`value ${plColor(todayPL)}`}>
-                        {Number(todayPL).toFixed(2)}
+                    <div className={`value ${plColor(item.todayPnl)}`}>
+                        {currency}{Number(item.todayPnl).toFixed(2)}
                     </div>
                 </div>
             </div>

@@ -10,3 +10,7 @@ spring:
 mybatis:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.finance.portfolio.pojo
+
+finnhub:
+  api:
+    key: d76h5lpr01qtg3ndjvcgd76h5lpr01qtg3ndjvd0

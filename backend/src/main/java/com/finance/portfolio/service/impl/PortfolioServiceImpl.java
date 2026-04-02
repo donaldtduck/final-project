@@ -5,9 +5,9 @@ import com.finance.portfolio.model.entity.TransactionRecord;
 import com.finance.portfolio.model.vo.PortfolioChartVo;
 import com.finance.portfolio.model.vo.PortfolioOverviewVo;
 import com.finance.portfolio.model.vo.StockVo;
+import com.finance.portfolio.service.MarketDataRouter;
 import com.finance.portfolio.service.PortfolioService;
 import com.finance.portfolio.service.StockService;
-import com.finance.portfolio.util.SinaStockApiUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
@@ -24,8 +24,10 @@ public class PortfolioServiceImpl implements PortfolioService {
     StockService stockService;
     @Autowired
     TransactionRecordMapper transactionRecordMapper;
+//    @Autowired
+//    SinaStockApiUtil sinaStockApiUtil;
     @Autowired
-    SinaStockApiUtil sinaStockApiUtil;
+    MarketDataRouter marketDataRouter;
 
 
     // 汇率
@@ -43,6 +45,7 @@ public class PortfolioServiceImpl implements PortfolioService {
         BigDecimal totalCost = BigDecimal.ZERO;
         BigDecimal todayPnl = BigDecimal.ZERO;
         Integer totalHoldings = 0;
+        BigDecimal totalRealizedPnl = BigDecimal.ZERO; // 加这个
 
         // ===================== 多币种汇率定义（2026-04-01 今日实时汇率） =====================
 
@@ -56,10 +59,10 @@ public class PortfolioServiceImpl implements PortfolioService {
 
             // ===================== 根据股票代码自动识别币种 =====================
             BigDecimal rate;
-            if (symbol.startsWith("sh") || symbol.startsWith("sz")) {
+            if (symbol.toLowerCase().startsWith("sh") || symbol.toLowerCase().startsWith("sz")) {
                 // A 股 → 人民币
                 rate = CNY_TO_USD;
-            } else if (symbol.startsWith("hk")) {
+            } else if (symbol.toLowerCase().startsWith("hk")) {
                 // 港股 → 港币
                 rate = HKD_TO_USD;
             } else {
@@ -77,6 +80,11 @@ public class PortfolioServiceImpl implements PortfolioService {
             totalCost = totalCost.add(costUsd.multiply(vol));
             todayPnl = todayPnl.add(dayPnlUsd);
             totalHoldings += volume;
+
+            // 累加 已实现盈亏（换算成美元）
+            BigDecimal realizedPnl = stock.getRealizedPnl();
+            BigDecimal realizedPnlUsd = realizedPnl.multiply(rate).setScale(4, RoundingMode.HALF_UP);
+            totalRealizedPnl = totalRealizedPnl.add(realizedPnlUsd);
         }
 
         // ===================== 计算组合表现（全部基于美元，正确！） =====================
@@ -99,7 +107,7 @@ public class PortfolioServiceImpl implements PortfolioService {
         vo.setTotalValue(totalValue.setScale(2, RoundingMode.HALF_UP));
         vo.setTotalCost(totalCost.setScale(2, RoundingMode.HALF_UP));
         vo.setUnrealizedPnl(unrealizedPnl.setScale(2, RoundingMode.HALF_UP));
-        vo.setRealizedPnl(BigDecimal.ZERO);
+        vo.setRealizedPnl(totalRealizedPnl.setScale(2, RoundingMode.HALF_UP));
         vo.setReturnRate(returnRate.setScale(2, RoundingMode.HALF_UP));
         vo.setTodayPnl(todayPnl.setScale(2, RoundingMode.HALF_UP));
         vo.setTodayChange(todayChange.setScale(2, RoundingMode.HALF_UP));
@@ -200,7 +208,8 @@ public class PortfolioServiceImpl implements PortfolioService {
             StockPosition pos = entry.getValue();
 
             // 获取当天收盘价
-            BigDecimal close = sinaStockApiUtil.getClosePriceByDate(symbol, LocalDateTime.of(date, LocalDateTime.MIN.toLocalTime()));
+            BigDecimal close = marketDataRouter.route(symbol).
+                    getClosePriceByDate(symbol, LocalDateTime.of(date, LocalDateTime.MIN.toLocalTime()));
             BigDecimal rate = getRate(symbol);
             BigDecimal usdValue = close.multiply(rate).multiply(pos.totalQuantity);
             total = total.add(usdValue);
@@ -225,8 +234,8 @@ public class PortfolioServiceImpl implements PortfolioService {
 
     // ===================== 币种汇率 =====================
     private BigDecimal getRate(String symbol) {
-        if (symbol.startsWith("sh") || symbol.startsWith("sz")) return CNY_TO_USD;
-        if (symbol.startsWith("hk")) return HKD_TO_USD;
+        if (symbol.toLowerCase().startsWith("sh") || symbol.toLowerCase().startsWith("sz")) return CNY_TO_USD;
+        if (symbol.toLowerCase().startsWith("hk")) return HKD_TO_USD;
         return USD_TO_USD;
     }
 

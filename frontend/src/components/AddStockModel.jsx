@@ -9,7 +9,6 @@ export default function AddStockModal({ onClose, onSuccess }) {
 
     const handleSubmit = async () => {
         if (!symbol) return alert('Symbol required');
-
         if (!totalPrice && !quantity) {
             return alert('Fill either totalPrice or quantity');
         }
@@ -21,11 +20,16 @@ export default function AddStockModal({ onClose, onSuccess }) {
             date: date ? new Date(date).toISOString() : null,
         };
 
-        const res = await addPortfolioItem(dto);
+        try {
+            await addPortfolioItem(dto);
 
-        if (res) {
-            onSuccess(res.data || res);
+            // ✅ 成功后：刷新并关闭
+            onSuccess();
             onClose();
+            window.location.reload();
+        } catch (err) {
+            console.error('添加失败', err);
+            alert('Add failed: ' + err.message);
         }
     };
 
@@ -34,7 +38,6 @@ export default function AddStockModal({ onClose, onSuccess }) {
             <div style={modalStyle}>
                 <h2 style={titleStyle}>Add Stock</h2>
 
-                {/* Symbol */}
                 <input
                     placeholder="Symbol (e.g. AAPL)"
                     value={symbol}
@@ -42,7 +45,6 @@ export default function AddStockModal({ onClose, onSuccess }) {
                     style={inputStyle}
                 />
 
-                {/* 二选一区域 */}
                 <div style={{ display: 'flex', gap: '1rem' }}>
                     <input
                         placeholder="Total Price"
@@ -52,10 +54,7 @@ export default function AddStockModal({ onClose, onSuccess }) {
                             setTotalPrice(e.target.value);
                             if (e.target.value) setQuantity('');
                         }}
-                        style={{
-                            ...inputStyle,
-                            opacity: quantity ? 0.5 : 1
-                        }}
+                        style={{ ...inputStyle, opacity: quantity ? 0.5 : 1 }}
                     />
 
                     <input
@@ -66,14 +65,10 @@ export default function AddStockModal({ onClose, onSuccess }) {
                             setQuantity(e.target.value);
                             if (e.target.value) setTotalPrice('');
                         }}
-                        style={{
-                            ...inputStyle,
-                            opacity: totalPrice ? 0.5 : 1
-                        }}
+                        style={{ ...inputStyle, opacity: totalPrice ? 0.5 : 1 }}
                     />
                 </div>
 
-                {/* Date */}
                 <input
                     type="datetime-local"
                     value={date}
@@ -81,7 +76,6 @@ export default function AddStockModal({ onClose, onSuccess }) {
                     style={inputStyle}
                 />
 
-                {/* Buttons */}
                 <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                     <button style={btnPrimary} onClick={handleSubmit}>
                         Submit
@@ -94,8 +88,6 @@ export default function AddStockModal({ onClose, onSuccess }) {
         </div>
     );
 }
-
-/* ===== 样式 ===== */
 
 const overlayStyle = {
     position: 'fixed',
@@ -114,16 +106,14 @@ const modalStyle = {
     display: 'flex',
     flexDirection: 'column',
     gap: '1.2rem',
-    width: '420px',          // ⭐ 更大
-    boxShadow:
-        '0 10px 30px rgba(155,27,77,0.6), 0 0 20px rgba(218,112,214,0.2) inset',
+    width: '420px',
+    boxShadow: '0 10px 30px rgba(155,27,77,0.6), 0 0 20px rgba(218,112,214,0.2) inset',
 };
 
 const titleStyle = {
     color: '#ffc0f5',
     textAlign: 'center',
-    textShadow:
-        '0 0 6px rgba(255,192,245,0.6), 0 0 12px rgba(255,192,245,0.4)',
+    textShadow: '0 0 6px rgba(255,192,245,0.6), 0 0 12px rgba(255,192,245,0.4)',
 };
 
 const inputStyle = {
@@ -134,8 +124,7 @@ const inputStyle = {
     fontSize: '0.95rem',
     background: 'linear-gradient(145deg, #030d2f, #1b0966)',
     color: '#fff',
-    boxShadow:
-        '0 4px 12px rgba(218,112,214,0.4), 0 0 10px rgba(238,130,238,0.2) inset',
+    boxShadow: '0 4px 12px rgba(218,112,214,0.4), 0 0 10px rgba(238,130,238,0.2) inset',
     transition: 'all 0.3s ease',
 };
 

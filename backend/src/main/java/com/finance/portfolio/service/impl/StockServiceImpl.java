@@ -1,6 +1,6 @@
 package com.finance.portfolio.service.impl;
 
-import cn.hutool.core.annotation.Alias;
+import com.finance.portfolio.model.vo.StockSnapshotVo;
 import com.finance.portfolio.exception.BusinessException;
 import com.finance.portfolio.mapper.TransactionRecordMapper;
 import com.finance.portfolio.model.dto.AddStockDto;
@@ -10,29 +10,33 @@ import com.finance.portfolio.model.dto.StockQueryDto;
 import com.finance.portfolio.model.entity.TransactionRecord;
 import com.finance.portfolio.model.vo.MyStockPerformanceVo;
 import com.finance.portfolio.model.vo.StockVo;
+import com.finance.portfolio.service.MarketDataRouter;
 import com.finance.portfolio.service.StockService;
-import com.finance.portfolio.util.SinaStockApiUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class StockServiceImpl implements StockService {
 
+//    @Autowired
+//    SinaStockApiUtil sinaStockApiUtil;
     @Autowired
-    SinaStockApiUtil sinaStockApiUtil;
+    MarketDataRouter marketDataRouter;
     @Autowired
     TransactionRecordMapper transactionRecordMapper;
 
     @Override
     public void addStock(AddStockDto addStockDto) {
-        BigDecimal closePriceByDate = sinaStockApiUtil.getClosePriceByDate(addStockDto.getSymbol(), addStockDto.getDate());
+        BigDecimal closePriceByDate = marketDataRouter.route(
+                addStockDto.getSymbol()).getClosePriceByDate(addStockDto.getSymbol(), addStockDto.getDate()
+        );
+//        BigDecimal closePriceByDate = sinaStockApiUtil.getClosePriceByDate(addStockDto.getSymbol(), addStockDto.getDate());
 
         TransactionRecord transactionRecord = new TransactionRecord();
         transactionRecord.setSymbol(addStockDto.getSymbol());
@@ -40,9 +44,9 @@ public class StockServiceImpl implements StockService {
         // optional field
 
         if (addStockDto.getQuantity() == null) {
-            transactionRecord.setQuantity(addStockDto.getTotalPrice().doubleValue() / closePriceByDate.doubleValue());
+            transactionRecord.setQuantity(Math.floor(addStockDto.getTotalPrice().doubleValue() / closePriceByDate.doubleValue()));
         } else {
-            transactionRecord.setQuantity(addStockDto.getQuantity().doubleValue());
+            transactionRecord.setQuantity(Math.floor(addStockDto.getQuantity().doubleValue()));
         }
         transactionRecord.setPrice(closePriceByDate.doubleValue());
 
@@ -95,8 +99,8 @@ public class StockServiceImpl implements StockService {
                     BigDecimal avgPrice = totalBuyCost.divide(totalBuyQuantity, 4, RoundingMode.HALF_UP);
 
                     // === 获取市场价格 ===
-                    BigDecimal currentPrice = sinaStockApiUtil.getCurrentPrice(symbol);
-                    BigDecimal lastClose = sinaStockApiUtil.getLastClosePrice(symbol);
+                    BigDecimal currentPrice = marketDataRouter.route(symbol).getCurrentPrice(symbol);
+                    BigDecimal lastClose = marketDataRouter.route(symbol).getLastClosePrice(symbol);
 
                     // === 封装 VO ===
                     StockVo vo = new StockVo();
@@ -139,6 +143,7 @@ public class StockServiceImpl implements StockService {
                     String symbol = entry.getKey();
                     List<TransactionRecord> records = entry.getValue();
 
+                    Collections.sort(records, Comparator.comparing(TransactionRecord::getDate));
                     // === 核心：计算总持仓数量、总投入成本 ===
                     BigDecimal totalQuantity = BigDecimal.ZERO;
                     BigDecimal totalCost = BigDecimal.ZERO;
@@ -159,9 +164,32 @@ public class StockServiceImpl implements StockService {
                     // === 计算 平均成本价（真正正确的 PurchasePrice）===
                     BigDecimal avgPrice = totalCost.divide(totalQuantity, 4, RoundingMode.HALF_UP);
 
+                    // ===================== 计算 已实现盈亏 Realized P&L =====================
+                    BigDecimal realizedPnl = BigDecimal.ZERO;
+                    BigDecimal remainingQty = BigDecimal.ZERO;
+
+                    for (TransactionRecord record : records) {
+                        BigDecimal qty = new BigDecimal(record.getQuantity());
+                        BigDecimal price = new BigDecimal(record.getPrice());
+                        if (qty.compareTo(BigDecimal.ZERO) > 0) {
+                            // 买入：增加持仓
+                            remainingQty = remainingQty.add(qty);
+                        } else {
+                            // 卖出：计算已实现盈亏
+                            BigDecimal sellQty = qty.abs();
+                            System.out.println("remainingQty: " + remainingQty + " sellQty: " + sellQty);
+                            if (remainingQty.compareTo(sellQty) >= 0) {
+                                System.out.println("price:" + price + "avgPrice:" + avgPrice);
+                                BigDecimal profit = price.subtract(avgPrice).multiply(sellQty);
+                                realizedPnl = realizedPnl.add(profit);
+                            }
+                            remainingQty = remainingQty.subtract(sellQty);
+                        }
+                    }
+
                     // === 当前价格 & 昨日收盘价 ===
-                    BigDecimal currentPrice = sinaStockApiUtil.getCurrentPrice(symbol);
-                    BigDecimal lastClose = sinaStockApiUtil.getLastClosePrice(symbol);
+                    BigDecimal currentPrice = marketDataRouter.route(symbol).getCurrentPrice(symbol);
+                    BigDecimal lastClose = marketDataRouter.route(symbol).getLastClosePrice(symbol);
 
                     // === 组装 VO ===
                     StockVo vo = new StockVo();
@@ -169,6 +197,7 @@ public class StockServiceImpl implements StockService {
                     vo.setVolume(totalQuantity.intValue());
                     vo.setPurchasePrice(avgPrice); // ✅ 正确：平均成本
                     vo.setCurrentPrice(currentPrice);
+                    vo.setRealizedPnl(realizedPnl);
 
                     // === 浮动盈亏 = (当前价 - 平均成本) * 数量 ===
                     BigDecimal unrealizedPnl = currentPrice
@@ -203,7 +232,8 @@ public class StockServiceImpl implements StockService {
             throw new BusinessException(400, "持仓数量不足，当前持仓：" + holdingQuantity + "股，尝试移除：" + removeQty + "股");
         }
         // 3. 获取操作日期的股票收盘价（与添加资产逻辑一致，保证价格准确性）
-        BigDecimal closePriceByDate = sinaStockApiUtil.getClosePriceByDate(removeStockDto.getSymbol(), removeStockDto.getDate());
+        BigDecimal closePriceByDate = marketDataRouter.route(removeStockDto.getSymbol()).
+                getClosePriceByDate(removeStockDto.getSymbol(), removeStockDto.getDate());
         if (closePriceByDate.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException(400, "获取股票价格失败，请检查代码或日期是否正确");
         }
@@ -224,8 +254,83 @@ public class StockServiceImpl implements StockService {
         StockQueryDto stockQuery = PerformanceQueryDto.toStockQuery(performanceQueryDto);
 
         myStockPerformanceVo.setSymbol(stockQuery.getSymbol());
-        myStockPerformanceVo.setStockHistoryVoList(sinaStockApiUtil.getStockHistory(stockQuery));
+        myStockPerformanceVo.setStockHistoryVoList(marketDataRouter.route(stockQuery.getSymbol()).getStockHistory(stockQuery));
         myStockPerformanceVo.setTransactionVoList(transactionRecordMapper.selectBySymbol(performanceQueryDto.getSymbol()));
         return myStockPerformanceVo;
     }
+
+
+
+// 从新浪API获取热门股票列表 + 价格 + 涨跌幅
+    @Override
+    public List<StockSnapshotVo> getAllStockSnapshots() {
+        List<StockSnapshotVo> result = new ArrayList<>();
+
+        try {
+            // 1. 从新浪 API 获取 热门/涨幅榜 股票（约 50 只）
+            List<String> symbolList = getSinaHotStockSymbols();
+
+            // 2. 批量获取价格 & 涨跌幅
+            for (String symbol : symbolList) {
+                try {
+                    BigDecimal currentPrice = marketDataRouter.route(symbol).getCurrentPrice(symbol);
+                    BigDecimal lastClose = marketDataRouter.route(symbol).getLastClosePrice(symbol);
+                    BigDecimal changeRate = calculateChangeRate(currentPrice, lastClose);
+
+                    StockSnapshotVo vo = new StockSnapshotVo();
+                    vo.setSymbol(symbol);
+                    vo.setCurrentPrice(currentPrice);
+                    vo.setPriceChangeRate(changeRate);
+
+                    result.add(vo);
+                } catch (Exception ignored) {
+                    // 单只失败不影响整体
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return result;
+    }
+
+// 从新浪获取热门股票列表（自动获取 40~50 只）
+private List<String> getSinaHotStockSymbols() {
+    RestTemplate restTemplate = new RestTemplate();
+    String url = "https://hq.sinajs.cn/list=fuHotStock";
+    List<String> symbols = new ArrayList<>();
+
+    try {
+        String response = restTemplate.getForObject(url, String.class);
+        if (response == null) return symbols; // 无数据返回空列表
+
+        String[] parts = response.split(",");
+        for (String p : parts) {
+            if (p.startsWith("\"") && p.length() > 8) {
+                String symbol = p.replace("\"", "").trim();
+                // 只保留沪深A股代码（sh/sz开头，8位）
+                if ((symbol.startsWith("sh") || symbol.startsWith("sz")) && symbol.length() == 8) {
+                    symbols.add(symbol);
+                }
+            }
+            if (symbols.size() >= 50) break; // 最多取50只
+        }
+    } catch (Exception e) {
+        System.err.println("拉取新浪热门股票列表失败：" + e.getMessage());
+    }
+
+    return symbols; // 失败返回空列表
+}
+
+// 涨跌幅计算（标准公式）
+    private BigDecimal calculateChangeRate(BigDecimal current, BigDecimal lastClose) {
+        if (current == null || lastClose == null || lastClose.compareTo(BigDecimal.ZERO) == 0) {
+            return BigDecimal.ZERO;
+        }
+        return current.subtract(lastClose)
+                .divide(lastClose, 4, RoundingMode.HALF_UP)
+                .multiply(new BigDecimal("100"))
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
 }
