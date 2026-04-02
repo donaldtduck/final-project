@@ -61,4 +61,6 @@ public interface StockService {
 
     void addWatchStock(String symbol);
     void removeWatchStock(String symbol);
+
+    List<TransactionRecord> getTransactionRecordBySymbol(String symbol);
 }

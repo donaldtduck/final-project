@@ -24,6 +24,18 @@ export async function removeStock(dto) {
     }
 }
 
+// ✅ 新增：获取交易记录
+export async function getTransactions(symbol) {
+    try {
+        const res = await fetch(`http://localhost:8080/api/stock/transactions/${symbol}`);
+        if (!res.ok) return [];
+        return await res.json();
+    } catch (err) {
+        console.error('Transaction fetch error', err);
+        return [];
+    }
+}
+
 export default function PortfolioItem({ item }) {
     const chartRef = useRef(null);
     const [expanded, setExpanded] = useState(false);
@@ -34,6 +46,9 @@ export default function PortfolioItem({ item }) {
     const [quantity, setQuantity] = useState('');
     const [date, setDate] = useState('');
     const [msg, setMsg] = useState('');
+
+    // ✅ 交易记录状态
+    const [transactions, setTransactions] = useState([]);
 
     const plColor = (value) => (value >= 0 ? 'green' : 'red');
 
@@ -49,7 +64,6 @@ export default function PortfolioItem({ item }) {
         }
     };
 
-    // 直接在这里拿到当前货币符号
     const currency = getCurrencySymbol();
 
     const handleToggle = (e) => {
@@ -59,7 +73,7 @@ export default function PortfolioItem({ item }) {
 
     const stop = (e) => e.stopPropagation();
 
-    // ✅ 提交移除 + 成功后刷新页面
+    // ✅ 提交移除
     const handleSubmitRemove = async (e) => {
         e.stopPropagation();
         if (!quantity || !date) {
@@ -83,14 +97,20 @@ export default function PortfolioItem({ item }) {
             setMsg('Success!');
             setQuantity('');
             setDate('');
-
-            // ✅ 操作完成后刷新页面，更新持仓
             setTimeout(() => window.location.reload(), 800);
         } else {
             setMsg('Failed');
         }
     };
 
+    // ✅ 展开时加载交易记录
+    useEffect(() => {
+        if (expanded) {
+            getTransactions(item.symbol).then(setTransactions);
+        }
+    }, [expanded, item.symbol]);
+
+    // 图表渲染（保持不变）
     useEffect(() => {
         if (!expanded || !chartRef.current) return;
         const load = async () => {
@@ -260,10 +280,8 @@ export default function PortfolioItem({ item }) {
             {expanded && (
                 <div onClick={stop} style={{ marginTop: '1rem' }}>
 
-                    {/* ========== ✅ Chart ========== */}
-                    <div style={{
-                        display: 'flex', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap'
-                    }}>
+                    {/* ========== Chart ========== */}
+                    <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
                         <select
                             value={unit}
                             onClick={stop}
@@ -309,7 +327,7 @@ export default function PortfolioItem({ item }) {
                         }}
                     />
 
-                    {/* ========== ✅ Remove Stock Form 已移到图表下方 ========== */}
+                    {/* ========== Remove Stock Form ========== */}
                     <div style={{
                         background: '#222',
                         borderRadius: '10px',
@@ -327,10 +345,7 @@ export default function PortfolioItem({ item }) {
                                 placeholder="Quantity"
                                 value={quantity}
                                 onClick={stop}
-                                onChange={(e) => {
-                                    stop(e);
-                                    setQuantity(e.target.value);
-                                }}
+                                onChange={(e) => { stop(e); setQuantity(e.target.value); }}
                                 style={{
                                     flex: 1,
                                     padding: '6px 10px',
@@ -346,10 +361,7 @@ export default function PortfolioItem({ item }) {
                                 type="datetime-local"
                                 value={date}
                                 onClick={stop}
-                                onChange={(e) => {
-                                    stop(e);
-                                    setDate(e.target.value);
-                                }}
+                                onChange={(e) => { stop(e); setDate(e.target.value); }}
                                 style={{
                                     flex: 1,
                                     padding: '6px 10px',
@@ -385,6 +397,57 @@ export default function PortfolioItem({ item }) {
                             }}>
                                 {msg}
                             </div>
+                        )}
+                    </div>
+
+                    {/* ========== ✅ 交易记录展示 ========== */}
+                    <div style={{
+                        marginTop: '1rem',
+                        background: '#222',
+                        borderRadius: '10px',
+                        padding: '12px 14px',
+                        border: '1px solid #ff69b4'
+                    }}>
+                        <div style={{ fontSize: '14px', color: '#fff', marginBottom: '10px' }}>
+                            Transaction History
+                        </div>
+
+                        {transactions.length === 0 ? (
+                            <div style={{ color: '#aaa', fontSize: '12px' }}>
+                                No transactions yet.
+                            </div>
+                        ) : (
+                            transactions.map((t, idx) => {
+                                const isBuy = t.quantity > 0;
+                                const qty = Math.abs(t.quantity);
+                                const typeLabel = isBuy ? 'BUY' : 'SELL';
+                                const typeColor = isBuy ? '#00ff88' : '#00ccff';
+
+                                return (
+                                    <div
+                                        key={idx}
+                                        style={{
+                                            padding: '8px 0',
+                                            borderBottom: idx < transactions.length - 1 ? '1px solid #333' : 'none',
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff' }}>
+                                            <div style={{ fontSize: '13px' }}>
+                                                <span style={{ color: typeColor, fontWeight: 'bold' }}>
+                                                    {typeLabel}
+                                                </span>
+                                                &nbsp;&nbsp; Qty: {qty.toFixed(0)}
+                                            </div>
+                                            <div style={{ fontSize: '12px', color: '#ccc' }}>
+                                                {new Date(t.date).toLocaleString()}
+                                            </div>
+                                        </div>
+                                        <div style={{ fontSize: '12px', color: '#ffb6e6', marginTop: '4px' }}>
+                                            Price: {currency}{t.price.toFixed(2)}
+                                        </div>
+                                    </div>
+                                );
+                            })
                         )}
                     </div>
 

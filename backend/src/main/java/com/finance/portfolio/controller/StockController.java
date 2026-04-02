@@ -3,6 +3,7 @@ package com.finance.portfolio.controller;
 import com.finance.portfolio.enums.TimeUnitEnum;
 import com.finance.portfolio.model.dto.*;
 import com.finance.portfolio.model.entity.Stock;
+import com.finance.portfolio.model.entity.TransactionRecord;
 import com.finance.portfolio.model.vo.MyStockPerformanceVo;
 import com.finance.portfolio.model.vo.StockHistoryVo;
 import com.finance.portfolio.model.vo.StockSnapshotVo;
@@ -53,6 +54,12 @@ public class StockController {
     public ResponseEntity<String> removeStock(@Valid @RequestBody RemoveStockDto removeStockDto) {
         stockService.removeStock(removeStockDto);
         return ResponseEntity.ok("资产移除成功"); // 直接返回ok，符合需求
+    }
+
+    @GetMapping("/transactions/{symbol}")
+    public ResponseEntity<List<TransactionRecord>> getTransactionRecordBySymbol(@PathVariable("symbol") String symbol) {
+        List<TransactionRecord> transactionRecordBySymbol = stockService.getTransactionRecordBySymbol(symbol);
+        return ResponseEntity.ok(transactionRecordBySymbol);
     }
 
     /**

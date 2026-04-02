@@ -379,4 +379,9 @@ public class StockServiceImpl implements StockService {
         stockMapper.deleteBySymbol(symbol);
     }
 
+    @Override
+    public List<TransactionRecord> getTransactionRecordBySymbol(String symbol) {
+        return transactionRecordMapper.selectBySymbol(symbol);
+    }
+
 }

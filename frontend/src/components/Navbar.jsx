@@ -71,7 +71,7 @@ export default function Navbar({ onAddSuccess }) {
                             fontSize: '15px' /* 按钮字体更大 */
                         }}
                     >
-                        + Add Item
+                        + Add Position
                     </button>
 
                     <button
